@@ -1,4 +1,4 @@
-CPath: Computational Pathology
+COMPASS: Computational Pathology and Spatial Statistics
 ---
 
 This package contains both a rich library of functions for computational
