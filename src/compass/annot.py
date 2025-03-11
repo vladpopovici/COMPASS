@@ -11,7 +11,7 @@ __version__ = 0.2
 import wsitk_annot as ann
 
 """
-CPATH.ANNOT: module to handle annotations specific to CPath. It complements (and
+COMPASS.ANNOT: module to handle annotations specific to CPath. It complements (and
 make use of) wsitk_annot.
 """
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# STAIN: stain deconvolution and normalization
+# COMPASS.STAIN: stain deconvolution and normalization
 
 
 #############################################################################

@@ -21,12 +21,12 @@ import configargparse as opt
 from datetime import datetime
 import hashlib
 from pathlib import Path
-from cpath.core import WSI
 from skimage.io import imread, imsave
 import pandas as pd
 import wsitk_annot
 
-from cpath.core import wsi2zarr
+from compass.core import WSI, wsi2zarr
+from compass.sample import SampleManager
 
 _time = datetime.now()
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
@@ -59,7 +59,7 @@ def main() -> int:
     )
     p.add_argument(
         "--out", action="store",
-        help="path where to store the results. (<path>/pyramid_0.zarr and <path>/annot_0)",
+        help="path where to store the results. (<path>.cp/pyramid_0.zarr and <path>/annot_0). Last part of path is taken as sample name",
         required=True
     )
     p.add_argument(
@@ -84,6 +84,9 @@ def main() -> int:
     H = np.array(registration[args.part]["transform"]).reshape((3,3))
 
     out_path = Path(args.out)
+    sample_name = out_path.stem
+    out_path = out_path.parent
+    mgr = SampleManager(out_path, sample_name, mode="w", overwrite_if_exists=True)
 
     wsi = WSI(wsi_file)
     x0, y0 = wsi.convert_px(
@@ -98,7 +101,7 @@ def main() -> int:
     )
 
     # write the ROI from WSI into a pyramidal ZARR:
-    wsi2zarr(wsi_file, out_path, crop=(x0, y0, x1-x0, y1-y0))
+    wsi2zarr(wsi_file, mgr.get_pyramid_path(0), crop=(x0, y0, x1-x0, y1-y0))
 
     # process annotations (spots and gene expression)
     spots = pd.read_feather(args.spots)
@@ -148,9 +151,10 @@ def main() -> int:
         )  # from WSI
         hrimg = imread(hr_file)[...,0:3]
         hrimg = cv2.warpPerspective(hrimg, H, (p.shape[1], p.shape[0]), flags=cv2.INTER_CUBIC)
-        imsave(out_path.with_suffix(".jpeg"), hrimg)
+        imsave(mgr.full_path / "hires.jpeg", hrimg)
 
-    annot.save(out_path / "annot_0.bin")
+    annot.save(mgr.get_annotation_path(0))
+    mgr.register_annotation(0, 0, "Visium spots")
 
     return 0
 

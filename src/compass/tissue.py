@@ -6,7 +6,7 @@
 # Licensed under the MIT License. See LICENSE file in root folder.
 #############################################################################
 
-# TISSUE: methods for tissue segmentation, stain normalization etc
+# COMPASS.TISSUE: methods for tissue segmentation, stain normalization etc
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __version__ = 0.1

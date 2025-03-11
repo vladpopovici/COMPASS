@@ -1,2 +1,2 @@
 def hello() -> str:
-    return "Hello from cpath!"
+    return "Hello from compass!"

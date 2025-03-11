@@ -27,7 +27,7 @@ import openslide as osl
 ImageShape = NewType("ImageShape", dict[str, int])
 
 """
-CPATH.CORE: core classes and functions.
+COMPASS.CORE: core classes and functions.
 """
 #####
 class Magnification:
@@ -838,7 +838,7 @@ def wsi2zarr(
     Converts a WSI file to pyramidal ZARR format.
 
     :param wsi_path: source file path.
-    :param dst_path: destination file path.
+    :param dst_path: destination file path (normally a .zarr folder).
     :param crop: either bool to control auto-crop or (x0, y0, width, height) for the crop region
     :param band_size: band height for processed regions
     :return: None
@@ -871,7 +871,7 @@ def wsi2zarr(
 
     levels = np.zeros((2, wsi.level_count), dtype=np.int64)
 
-    with (zarr.open_group(str(dst_path/'pyramid_0.zarr'), mode='w') as root):
+    with (zarr.open_group(str(dst_path), mode='w') as root):
         for i in range(wsi.level_count):
             # copy levels from WSI, band by band...
             # -level i crop region:

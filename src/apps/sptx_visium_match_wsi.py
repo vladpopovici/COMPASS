@@ -15,8 +15,8 @@ import simplejson as json
 import configargparse as opt
 from pathlib import Path
 
-from cpath.sptx.visium_v1 import get_affine_transformation_per_region
-from cpath.core import NumpyJSONEncoder, WSI
+from compass.sptx.visium_v1 import get_affine_transformation_per_region
+from compass.core import NumpyJSONEncoder, WSI
 
 _time = datetime.now()
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
