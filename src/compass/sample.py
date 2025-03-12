@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT License. See LICENSE file in root folder.
 #############################################################################
-#
+
 # SAMPLE.PY: Sample manager trying to orchestrate all files related to a single sample.
 #
 # General structure of the folder holding the data for a sample:
