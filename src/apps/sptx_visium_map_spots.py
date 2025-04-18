@@ -153,8 +153,7 @@ def main() -> int:
         hrimg = cv2.warpPerspective(hrimg, H, (p.shape[1], p.shape[0]), flags=cv2.INTER_CUBIC)
         imsave(mgr.full_path / "hires.jpeg", hrimg)
 
-    annot.save(mgr.get_annotation_path(0))
-    mgr.register_annotation(0, 0, "Visium spots")
+    mgr.add_annotation(annot, 0, "Visium spots")
 
     return 0
 

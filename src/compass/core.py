@@ -517,8 +517,8 @@ class MRI(object):
     def __init__(self, path: Union[str|Path]):
         self._path = Path(path) if path is str else path
 
-        with zarr.open(self._path, mode='r') as z:
-            self._info = z.attrs
+        z = zarr.open(self._path, mode='r')
+        self._info = z.attrs.asdict()
 
         self._pyramid_levels = np.array(self._info["extent"], dtype=int)
         self._downsample_factors = np.array([2**i for i in range(self._info['max_level'])], dtype=int)
