@@ -88,7 +88,6 @@ class SampleManager(object):
                 with zf.open('annot_idx.json', 'w') as f:
                     f.write(json.dumps(self.ann_list))
 
-    @cached_property
     def get_pyramid_path(self, pyramid_idx: int = 0) -> Path:
         return self.full_path / f'pyramid_{pyramid_idx}.zarr'
 
