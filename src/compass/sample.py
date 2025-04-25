@@ -107,7 +107,7 @@ class SampleManager(object):
                              compresslevel=self.__zip_compress_level) as zf:
             with zf.open(f"annot_{annot_idx}.json", 'w') as f:
                 f.write(
-                    json.dumps(annot)
+                    json.dumps(annot.asdict())
                 )
             with zf.open("annot_idx.json", 'w') as f:
                 f.write(
@@ -125,7 +125,7 @@ class SampleManager(object):
                              compresslevel=self.__zip_compress_level) as zf:
             with zf.open(f"annot_{ann_idx}.json", 'w') as f:
                 f.write(
-                    json.dumps(annot)
+                    json.dumps(annot.asdict())
                 )
             zf.testzip()
 
