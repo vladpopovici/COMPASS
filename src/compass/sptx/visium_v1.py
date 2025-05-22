@@ -26,10 +26,11 @@ from math import ceil, log2
 
 from skimage.morphology import disk, binary_dilation
 from skimage.filters import threshold_sauvola, median, sobel_h, sobel_v
-from skimage.transform import rescale, probabilistic_hough_line
+from skimage.transform import rescale, probabilistic_hough_line, warp
 from skimage.color import rgb2lab
 from skimage.metrics import structural_similarity
-from skimage.io import imread, imsave
+from skimage.io import imread #, imsave
+from skimage.registration import optical_flow_tvl1
 
 import cv2 as cv
 import numpy as np
@@ -176,8 +177,8 @@ def get_affine_transformation_per_region(
             }
     """
     # from micrometers to pixels:
-    visium_roi_width = int(7650 / float(slide.info['mpp_x'])) # [um] / [um/px]
-    visium_roi_height = int(7570 / float(slide.info['mpp_y']))
+    visium_roi_width = int(VISIUM1['roi_width'] / float(slide.info['mpp_x'])) # [um] / [um/px]
+    visium_roi_height = int(VISIUM1['roi_height'] / float(slide.info['mpp_y']))
     # visium_roi_internal_width = int(6960 / float(slide.info['mpp_x']))
     # visium_roi_internal_height = int(6610 / float(slide.info['mpp_y']))
 
@@ -246,7 +247,7 @@ def get_affine_transformation_per_region(
             left = min(left, x0)
             right = max(right, x1)
 
-    # allow some space around current estimated ROI:
+    # allow some space around the current estimated ROI:
     top = max(0, top - 1)
     bottom = min(bottom + 1, npi.height(mask))
     left = max(0, left - 1)
@@ -296,7 +297,7 @@ def get_affine_transformation_per_region(
             if H is not None:
                 tP = cv.warpPerspective(hr_img, H, (P.shape[1], P.shape[0]))
                 match_quality[i,j] = structural_similarity(tP, P, win_size=35, channel_axis=2)
-                imsave(f"p_{i}_{j}.jpg", P)
+                #imsave(f"p_{i}_{j}.jpg", P)
 
             transforms.append({
                 'patch': dict(x0=x0, y0= y0, x1=x1, y1=y1),  # coords in level_3
@@ -321,6 +322,7 @@ def get_affine_transformation_per_region(
             matches[k]['image'] = high_res_images[i]
             matches[k]['transform'] = transforms[4*i+j]['H']
             matches[k]['wsi_level'] = transforms[4*i+j]['level']
+
         j += 1
 
     return matches

@@ -15,18 +15,17 @@
 #                |...
 #       |---- pyramid_1.zarr
 #       .....
-#       |---- annotations.dbz  <- a ZIP archive with all annotations as JSON files
-#               |---- annot_0.json
-#               |---- annot_1.json
-#               .....
-#               |---- annot_idx.json    <- JSON file with info on annotation files
+#       |---- annot_0.json.gz      <- first annotation (compressed)
+#       |---- annot_1.json.gz
+#         .....
+#       |---- annot_idx.json    <- JSON file with info on annotation files
 #
 
 from pathlib import Path
 from typing import Union
 import orjson as json
 from shutil import rmtree
-import zipfile
+import gzip
 from wsitk_annot import Annotation
 from functools import cached_property
 
@@ -49,8 +48,6 @@ class SampleManager(object):
         self.sample_name = sample_name
         self.full_path = (self.sample_path / self.sample_name).with_suffix('.cp')
         self.ann_list = None
-        self.__zip_compression = zipfile.ZIP_LZMA
-        self.__zip_compress_level = 9
 
         mode = mode.lower()
         if mode not in ['r', 'w', 'a']: # read/write/append
@@ -58,7 +55,7 @@ class SampleManager(object):
         if mode == 'r' or mode == 'a':
             if not self.full_path.exists() or not self.get_annotation_path.exists():
                 raise RuntimeError('sample or annotation path does not exist')
-            self._load_annot_index()
+            self._load_annot_registry()
         else:
             # mode == 'w':
             if self.full_path.exists():
@@ -72,28 +69,29 @@ class SampleManager(object):
             self.full_path.mkdir(parents=True, exist_ok=True)
             self._init_annotations()
 
-    def _load_annot_index(self):
-        if not self.get_annotation_path.exists():
+    @cached_property
+    def get_annot_registry_path(self) -> Path:
+        return self.full_path / 'annot_idx.json'
+
+    def _load_annot_registry(self):
+        if not self.get_annot_registry_path.exists():
             self.ann_list = None
             return
-        with zipfile.ZipFile(self.get_annotation_path, 'r') as zf:
-            with zf.open('annot_idx.json', 'r') as f:
-                self.ann_list = json.loads(f.read())
+        with open(self.get_annot_registry_path, 'rb') as f:
+            self.ann_list = json.loads(f.read())
 
     def _init_annotations(self):
-        if not self.get_annotation_path.exists():
-            with zipfile.ZipFile(self.get_annotation_path, 'w',
-                                 compression=self.__zip_compression,
-                                 compresslevel=self.__zip_compress_level) as zf:
-                with zf.open('annot_idx.json', 'w') as f:
-                    f.write(json.dumps(self.ann_list))
+        if not self.get_annot_registry_path.exists():
+            with open(self.get_annot_registry_path, 'wb') as f:
+                f.write(
+                    json.dumps(self.ann_list, option=json.OPT_NON_STR_KEYS)
+                )
 
     def get_pyramid_path(self, pyramid_idx: int = 0) -> Path:
         return self.full_path / f'pyramid_{pyramid_idx}.zarr'
 
-    @cached_property
-    def get_annotation_path(self) -> Path:
-        return self.full_path / 'annotations.dbz'
+    def get_annotation_path(self, ann_idx: int) -> Path:
+        return self.full_path / f'annot_{ann_idx}.json.gz'
 
     def add_annotation(self, annot: Annotation, pyramid_idx: int, descr: str = "") -> None:
         if self.ann_list is None:
@@ -102,32 +100,22 @@ class SampleManager(object):
         annot_idx = self._get_new_annotation_idx()
         self.ann_list[annot_idx] = {'pyramid_idx': pyramid_idx, 'description': descr}
 
-        with zipfile.ZipFile(self.get_annotation_path, 'a',
-                             compression=self.__zip_compression,
-                             compresslevel=self.__zip_compress_level) as zf:
-            with zf.open(f"annot_{annot_idx}.json", 'w') as f:
-                f.write(
-                    json.dumps(annot.asdict())
-                )
-            with zf.open("annot_idx.json", 'w') as f:
-                f.write(
-                    json.dumps(self.ann_list)
-                )
-            zf.testzip()
+        with gzip.open(self.get_annotation_path(annot_idx), 'wb') as zf:
+                annot.save(zf)
+
+        with open(self.get_annot_registry_path, 'wb') as f:
+            f.write(
+                json.dumps(self.ann_list, option=json.OPT_NON_STR_KEYS)
+            )
 
     def update_annotation(self, annot:Annotation, ann_idx:int) -> int:
         if self.ann_list is None or len(self.ann_list) == 0:
-            raise RuntimeError(f"annotation with index {ann_idx} not found")
+            raise RuntimeError("no annotations in the registry")
         if ann_idx not in self.ann_list:
             raise RuntimeError(f"annotation with index {ann_idx} not found")
-        with zipfile.ZipFile(self.get_annotation_path, 'a',
-                             compression=self.__zip_compression,
-                             compresslevel=self.__zip_compress_level) as zf:
-            with zf.open(f"annot_{ann_idx}.json", 'w') as f:
-                f.write(
-                    json.dumps(annot.asdict())
-                )
-            zf.testzip()
+
+        with gzip.open(self.get_annotation_path(ann_idx), 'wb') as f:
+            annot.save(f)
 
     def _get_new_annotation_idx(self) -> int:
         if len(self.ann_list) == 0:

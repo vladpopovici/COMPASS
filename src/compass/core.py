@@ -8,9 +8,11 @@
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __version__ = 0.2
 
+from abc import ABC, abstractmethod, abstractproperty
 import pathlib
-from math import floor, log
-from typing import Union, Optional, Tuple, NewType
+from os import PathLike
+from math import floor
+from typing import Optional, Tuple
 import dask.array as da
 from pathlib import Path
 import pyvips
@@ -23,14 +25,29 @@ from .mask import add_region, apply_mask
 from skimage.util import img_as_uint
 import simplejson as json
 import openslide as osl
+from pydantic import BaseModel
 
-ImageShape = NewType("ImageShape", dict[str, int])
+class ImageShape(BaseModel):  # = NewType("ImageShape", dict[str, int])
+    width: int
+    height: int
+
+class Px(BaseModel):  # Pixel: int coords
+    x: int
+    y: int
 
 """
 COMPASS.CORE: core classes and functions.
 """
 #####
 class Magnification:
+    """Magnification establishes the mapping between physical dimensions, pixel size,
+    and microscope's objective power. It needs the resolution of the image (in
+    microns per pixel) and the corresponding objective power. These are assumed
+    to correspond to "level 0" (the base level) of the image pyramid (highest resolution,
+    largest image size), but a different level can be specified. Additionally, the scale
+    factor between levels can be specified (defaults to 2.0, i.e. halving/doubling
+    the image when traversing the pyramid)."""
+
     def __init__(self,
                  magnif: float,
                  mpp: float,
@@ -57,14 +74,18 @@ class Magnification:
         self._magnif_step = magnif_step
         self._n_levels = n_levels
         # initialize look-up tables:
-        self.__magnif = magnif * self._magnif_step ** (level - np.arange(n_levels))
-        self.__mpp = mpp * self._magnif_step ** (np.arange(n_levels) - level)
+        self.__magnif = magnif * float(self._magnif_step) ** (level - np.arange(n_levels))
+        self.__mpp = mpp * float(self._magnif_step) ** (np.arange(n_levels) - level)
 
         return
 
     @property
     def magnif_step(self) -> float:
         return self._magnif_step
+
+    @property
+    def nlevels(self) -> int:
+        return self._n_levels
 
     def get_magnif_for_mpp(self, mpp: float) -> float:
         """
@@ -93,6 +114,20 @@ class Magnification:
         k = np.argmin(np.abs(mpp - self.__mpp))
 
         return float(self.__magnif[k])
+
+    def get_magnification_step(self) -> float:
+        """
+        Return the magnification step between two consecutive levels.
+        Use the property .magnif_step in new code, this method is kept for
+        backward compatibility.
+
+        Returns:
+            float: magnification step
+        """
+        return self._magnif_step
+
+    def get_magnif_for_level(self, level: int) -> float:
+        return self.__magnif[level]
 
     def get_mpp_for_magnif(self, magnif: float) -> float:
         """
@@ -171,34 +206,180 @@ class Magnification:
 
         return float(self.__mpp[level])
 
-    def get_magnification_step(self) -> float:
-        """
-        Return the magnification step between two consecutive levels.
-
-        Returns:
-            float: magnification step
-        """
-        return self._magnif_step
 ##
 
 #####
-class WSI(object):
-    """An extended version of OpenSlide, with more handy methods
-    for dealing with microscopy slide images.
+class PyramidalImage(ABC):
+    """Abstract base class for a pyramidal image. It provide the basic API
+    for storing information about and interacting with the image."""
+
+    def __init__(self, path: pathlib.Path|str|PathLike,
+                 base_dim: ImageShape = ImageShape(width=0, height=0),
+                 magnif: Magnification = None):
+        """Construct an abstract pyramidal image: basic knowledge of storage
+        location, image shape, and magnification characteristics coudl be
+        provided as arguments.
+
+        """
+        self._path: pathlib.Path = pathlib.Path(path)
+        self._mag: Magnification = magnif
+        self._pyramid_levels: np.array = None
+        self._base_dim: ImageShape = base_dim
+        self._nlevels: int = 0
+        if self._mag is not None:
+            self._nlevels = self._mag.nlevels
+            self._pyramid_levels = np.zeros((2, self._mag.nlevels), dtype=int)
+            self._pyramid_levels[0, 0] = self._base_dim.width
+            self._pyramid_levels[1, 0] = self._base_dim.height
+            for lv in range(1, self._mag.nlevels):
+                self._pyramid_levels[0, lv] = int(self._pyramid_levels[0, lv-1] / self._mag.magnif_step)
+                self._pyramid_levels[1, lv] = int(self._pyramid_levels[1, lv-1] / self._mag.magnif_step)
+    # end
+
+    @property
+    @abstractmethod
+    def info(self) -> dict:
+        pass
+
+    @property
+    def path(self) -> pathlib.Path:
+        return self._path
+
+    @property
+    def nlevels(self) -> int:
+        return self._nlevels
+
+    @property
+    def get_native_magnification(self) -> float:
+        return self._mag._base_magnif
+
+    @property
+    def get_native_resolution(self) -> float:
+        return self._mag._base_mpp
+
+    def get_level_for_magnification(self, mag: float, eps=1e-6) -> int:
+        return self._mag.get_level_for_magnif(mag)
+
+    def get_level_for_mpp(self, mpp: float) -> int:
+        return self._mag.get_level_for_mpp(mpp)
+
+    def get_magnification_for_level(self, level: int) -> float:
+        return self._mag.get_magnif_for_level(level)
+
+    def get_magnification_for_mpp(self, mpp: float) -> float:
+        return self._mag.get_magnif_for_mpp(mpp)
+
+    def get_mpp_for_level(self, level: int) -> float:
+        return self._mag.get_mpp_for_level(level)
+
+    def get_mpp_for_magnification(self, mag: float) -> float:
+        return self._mag.get_mpp_for_magnif(mag)
+
+    def shape(self, level: int = 0) -> ImageShape:
+        return ImageShape(width=int(self._pyramid_levels[0, level]),
+                          height=int(self._pyramid_levels[1, level]))
+    @property
+    def pyramid_levels(self):
+        return self._pyramid_levels
+
+    @property
+    def widths(self) -> np.array:
+        return self._pyramid_levels[0, :]
+
+    @property
+    def heights(self) -> np.array:
+        return self._pyramid_levels[1, :]
+
+    def between_level_scaling_factor(self, from_level: int, to_level: int) -> float:
+        """Return the scaling factor for converting coordinates (magnification) between
+        two levels of the pyramid."""
+        return self._mag.magnif_step ** (from_level - to_level)
+
+    def convert_px(self, point: Px, from_level: int, to_level: int) -> Px:
+        if from_level == to_level:
+            return point
+        s = self.between_level_scaling_factor(from_level, to_level)
+        return Px(x=int(floor(point.x * s)), y=int(floor(point.y * s)))
+
+    @abstractmethod
+    def get_region_px(self, x0: int, y0: int,
+                      width: int, height: int,
+                      level: int = 0, as_type=np.uint8) -> np.ndarray:
+        """Read a region from the image source. The region is specified in pixel coordinates."""
+        pass
+
+    def get_region(self, top_left_corner: Px, shape: ImageShape, level: int = 0, as_type=np.uint8) -> np.ndarray:
+        """Read a region from the image source. The region is specified in pixel coordinates."""
+        return self.get_region_px(top_left_corner.x, top_left_corner.y, shape.width, shape.height, level, as_type)
+
+    def get_plane(self, level: int = 0, as_type=np.uint8) -> np.ndarray:
+        """Read a plane from the image source. The plane is specified by its level."""
+        return self.get_region_px(0, 0, self.widths[level], self.heights[level], level, as_type)
+
+    def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
+                                    border: int = 0, as_type=np.uint8) -> np.ndarray:
+            """Returns a rectangular view of the image source that minimally covers a closed
+            contour (polygon). All pixels outside the contour are set to 0.
+
+            Args:
+                contour (shapely.geometry.Polygon): a closed polygonal line given in
+                    terms of its vertices. The contour's coordinates are supposed to be
+                    precomputed and to be represented in pixel units at the desired level.
+                level (int): image pyramid level
+                border (int): if > 0, take this many extra pixels in the rectangular
+                    region (up to the limits on the image size)
+                as_type: pixel type for the returned image (array)
+
+            Returns:
+                a numpy.ndarray
+            """
+            x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
+            x0, y0 = max(0, x0 - border), max(0, y0 - border)
+            x1, y1 = min(x1 + border, self.shape(level).width), \
+                min(y1 + border, self.shape(level).height)
+            # Shift the annotation such that (0,0) will correspond to (x0, y0)
+            contour = sha.translate(contour, -x0, -y0)
+
+            # Read the corresponding region
+            img = self.get_region_px(x0, y0, x1 - x0, y1 - y0, level, as_type=as_type)
+
+            # Prepare mask
+            mask = np.zeros(img.shape[:2], dtype=as_type)
+            add_region(mask, shapely.get_coordinates(contour))
+
+            # Apply mask
+            img = apply_mask(img, mask)
+
+            # # mask out the points outside the contour
+            # for i in np.arange(img.shape[0]):
+            #     # line mask
+            #     lm = np.zeros((img.shape[1], img.shape[2]), dtype=img.dtype)
+            #     j = [_j for _j in np.arange(img.shape[1]) if shg.Point(_j, i).within(contour)]
+            #     lm[j,] = 1
+            #     img[i,] = img[i,] * lm
+
+            return img
+    ##
+
+#####
+class WSI(PyramidalImage):
+    """An extended version of OpenSlide, with more handy methods for dealing with
+    microscopy slide images.
 
     Args:
         path (str): full path to the image file
 
     Attributes:
         _path (str): full path to WSI file
-        info (dict): slide image metadata
+        _info (dict): slide image metadata
     """
 
-    def __init__(self, path: str | pathlib.Path):
-        self._path = pathlib.Path(path) if isinstance(path, str) else path
-        self._slide = slide_src = osl.OpenSlide(self.path)
+    def __init__(self, path: str | pathlib.Path | PathLike):
+        self._slide = slide_src = osl.OpenSlide(path)
+        # keep also full meta info:
         self._original_meta = slide_meta = slide_src.properties
-        self.info = {
+        # rename some of the most important properties:
+        self._info = {
             'objective_power': float(slide_meta[osl.PROPERTY_NAME_OBJECTIVE_POWER]),
             'width':  slide_src.dimensions[0],
             'height': slide_src.dimensions[1],
@@ -209,112 +390,43 @@ class WSI(object):
             'roi': None,
             'background': 0xFF
         }
-
         # optional properties:
         if osl.PROPERTY_NAME_BOUNDS_X in slide_meta:
-            self.info['roi'] = {
+            self._info['roi'] = {
                 'x0': int(slide_meta[osl.PROPERTY_NAME_BOUNDS_X]),
                 'y0': int(slide_meta[osl.PROPERTY_NAME_BOUNDS_Y]),
                 'width': int(slide_meta[osl.PROPERTY_NAME_BOUNDS_WIDTH]),
                 'height': int(slide_meta[osl.PROPERTY_NAME_BOUNDS_HEIGHT]),
             }
         if osl.PROPERTY_NAME_BACKGROUND_COLOR in slide_meta:
-            self.info['background'] = 0xFF if slide_meta[osl.PROPERTY_NAME_BACKGROUND_COLOR] == 'FFFFFF' else 0
+            self._info['background'] = 0xFF if slide_meta[osl.PROPERTY_NAME_BACKGROUND_COLOR] == 'FFFFFF' else 0
 
-        # _pyramid_levels: 2 x n_levels: [max_x, max_y] x [0,..., n_levels-1]
-        self._pyramid_levels = np.zeros((2, self.info['n_levels']), dtype=int)
-
-        # _pyramid_mpp: 2 x n_levels: [mpp_x, mpp_y] x [0,..., n_levels-1]
-        self._pyramid_mpp = np.zeros((2, self.info['n_levels']))
-        self._downsample_factors = np.zeros((self.info['n_levels'],), dtype=int)
-
-        self.magnif_converter =  Magnification(
-            self.info['objective_power'],
-            mpp=0.5*(self.info['mpp_x'] + self.info['mpp_y']),
-            level=0,
-            magnif_step=float(self.info['magnification_step'])
-        )
-
-        for lv in range(self.info['n_levels']):
-            s = self.magnif_converter.magnif_step ** lv
-            self._pyramid_levels[0, lv] = slide_src.level_dimensions[lv][0]
-            self._pyramid_levels[1, lv] = slide_src.level_dimensions[lv][1]
-            self._pyramid_mpp[0, lv] = s * self.info['mpp_x']
-            self._pyramid_mpp[1, lv] = s * self.info['mpp_y']
-            self._downsample_factors[lv] = s
-
-        return
+        super().__init__(path, ImageShape(width=slide_src.dimensions[0], height=slide_src.dimensions[1]),
+                         Magnification(self._info['objective_power'],
+                                       mpp=0.5 * (self._info['mpp_x'] + self._info['mpp_y']),
+                                       level=0,
+                                       n_levels=self._info['n_levels'],
+                                       magnif_step=float(self._info['magnification_step'])))
 
     @property
-    def level_count(self) -> int:
+    def info(self) -> dict:
+        return self._info
+
+    @property
+    def level_count(self) -> int:  # TODO: remove in future versions
         """Return the number of levels in the multi-resolution pyramid."""
-        return self.info['n_levels']
+        return self.nlevels
 
 
     def downsample_factor(self, level:int) -> int:
         """Return the down-sampling factor (relative to level 0) for a given level."""
-        if level < 0 or level >= self.level_count:
+        if level < 0 or level >= self.nlevels:
             return -1
 
-        return int(self._downsample_factors[level])
+        return int(floor(self._mag.magnif_step ** level))
 
-    @property
-    def get_native_magnification(self) -> float:
-        """Return the original magnification for the scan."""
-        return self.info['objective_power']
 
-    @property
-    def get_native_resolution(self) -> float:
-        """Return the scan resolution (microns per pixel)."""
-        return 0.5 * (self.info['mpp_x'] + self.info['mpp_y'])
-
-    def get_level_for_magnification(self, mag: float, eps=1e-6) -> int:
-        """Returns the level in the image pyramid that corresponds the given magnification.
-
-        Args:
-            mag (float): magnification
-            eps (float): accepted error when approximating the level
-
-        Returns:
-            level (int) or -1 if no suitable level was found
-        """
-        if mag > self.info['objective_power'] or mag < 2.0**(1-self.level_count) * self.info['objective_power']:
-            return -1
-
-        lx = log(self.info['objective_power'] / mag, self.info['magnification_step'])
-        k = np.where(np.isclose(lx, range(0, self.level_count), atol=eps))[0]
-        if len(k) > 0:
-            return int(k[0])   # first index matching
-        else:
-            return -1   # no match close enough
-
-    def get_level_for_mpp(self, mpp: float):
-        """Return the level in the image pyramid that corresponds to a given resolution."""
-        return self.magnif_converter.get_level_for_mpp(mpp)
-
-    def get_mpp_for_level(self, level: int):
-        """Return resolution (mpp) for a given level in pyramid."""
-        return self.magnif_converter.get_mpp_for_level(level)
-
-    def get_magnification_for_level(self, level: int) -> float:
-        """Returns the magnification (objective power) for a given level.
-
-        Args:
-            level (int): level in the pyramidal image
-
-        Returns:
-            magnification (float)
-            If the level is out of bounds, returns -1.0
-        """
-        if level < 0 or level >= self.level_count:
-            return -1.0
-        if level == 0:
-            return self.info['objective_power']
-
-        #return 2.0**(-level) * self.info['objective_power']
-        return self.info['magnification_step'] ** (-level) * self.info['objective_power']
-
-    def get_extent_at_level(self, level: int) -> Optional[ImageShape]:
+    def get_extent_at_level(self, level: int) -> Optional[ImageShape]: # TODO: remove in future versions
         """Returns width and height of the image at a desired level.
 
         Args:
@@ -323,78 +435,10 @@ class WSI(object):
         Returns:
             (width, height) of the level
         """
-        if level < 0 or level >= self.level_count:
-            return None
-        return ImageShape({
-            'width': self._pyramid_levels[0, level],
-            'height': self._pyramid_levels[1, level]
-        })
+        return self.shape(level)
 
-    @property
-    def pyramid_levels(self):
-        return self._pyramid_levels
-
-    @property
-    def path(self) -> pathlib.Path:
-        return self._path
-
-    @property
-    def widths(self) -> np.array:
-        # All widths for the pyramid levels
-        return self._pyramid_levels[0, :]
-
-    @property
-    def heights(self) -> np.array:
-        # All heights for the pyramid levels
-        return self._pyramid_levels[1, :]
-
-    # def extent(self, level: int = 0) -> tuple[Any, ...]:
-    #     # width, height for a given level
-    #     return tuple(self._pyramid_levels[:, level])
-
-    def level_shape(self, level: int = 0) -> ImageShape:
-        return ImageShape(
-            {
-                'width': int(self._pyramid_levels[0, level]),
-                'height': int(self._pyramid_levels[1, level])
-            }
-        )
-
-    def between_level_scaling_factor(self, from_level: int, to_level: int) -> float:
-        """Return the scaling factor for converting coordinates (magnification)
-        between two levels in the MRI.
-
-        Args:
-            from_level (int): original level
-            to_level (int): destination level
-
-        Returns:
-            float
-        """
-        f = self._downsample_factors[from_level] / self._downsample_factors[to_level]
-
-        return float(f)
-
-    def convert_px(self, point, from_level, to_level) -> Tuple[int, int]:
-        """Convert pixel coordinates of a point from <from_level> to
-        <to_level>
-
-        Args:
-            point (tuple): (x,y) coordinates in <from_level> plane
-            from_level (int): original image level
-            to_level (int): destination level
-
-        Returns:
-            x, y (float): new coordinates - no rounding is applied
-        """
-        if from_level == to_level:
-            return point  # no conversion is necessary
-        x, y = point
-        f = self.between_level_scaling_factor(from_level, to_level)
-        x *= f
-        y *= f
-
-        return int(x), int(y)
+    def level_shape(self, level: int = 0) -> ImageShape:  # TODO: remove in future versions
+        return self.shape(level)
 
     def get_region_px(self, x0: int, y0: int,
                       width: int, height: int,
@@ -421,7 +465,8 @@ class WSI(object):
                 y0 + height > self.heights[level]:
             raise RuntimeError("region out of layer's extent")
 
-        x0_0, y0_0 = self.convert_px((x0, y0), level, 0)
+        p = self.convert_px(Px(x=x0, y=y0), level, 0)
+        x0_0, y0_0 = p.x, p.y
         img = self._slide.read_region((x0_0, y0_0), level, (width, height))
         img = np.array(img)
 
@@ -432,64 +477,12 @@ class WSI(object):
             img = img[..., :-1]
 
         return img.astype(as_type)
-
-    def get_plane(self, level: int = 0, as_type=np.uint8) -> np.ndarray:
-        """Read a whole plane from the image pyramid and return it as a Numpy array.
-
-        Args:
-            level (int): pyramid level to read
-            as_type: type of the pixels (default numpy.uint8)
-
-        Returns:
-            a numpy.ndarray
-        """
-        if level < 0 or level >= self.level_count:
-            raise RuntimeError("requested level does not exist")
-
-        return self.get_region_px(0, 0, self.widths[level], self.heights[level], level, as_type)
-
-    def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
-                                border: int = 0, as_type=np.uint8) -> np.ndarray:
-        """Returns a rectangular view of the image source that minimally covers a closed
-        contour (polygon). All pixels outside the contour are set to 0.
-
-        Args:
-            contour (shapely.geometry.Polygon): a closed polygonal line given in
-                terms of its vertices. The contour's coordinates are supposed to be
-                precomputed and to be represented in pixel units at the desired level.
-            level (int): image pyramid level
-            border (int): if > 0, take this many extra pixels in the rectangular
-                region (up to the limits on the image size)
-            as_type: pixel type for the returned image (array)
-
-        Returns:
-            a numpy.ndarray
-        """
-        x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
-        x0, y0 = max(0, x0 - border), max(0, y0 - border)
-        x1, y1 = min(x1 + border, self.extent(level)[0]), \
-            min(y1 + border, self.extent(level)[1])
-        # Shift the annotation such that (0,0) will correspond to (x0, y0)
-        contour = sha.translate(contour, -x0, -y0)
-
-        # Read the corresponding region
-        img = self.get_region_px(x0, y0, x1 - x0, y1 - y0, level, as_type=as_type)
-
-        # mask out the points outside the contour
-        for i in np.arange(img.shape[0]):
-            # line mask
-            lm = np.zeros((img.shape[1], img.shape[2]), dtype=img.dtype)
-            j = [_j for _j in np.arange(img.shape[1]) if shg.Point(_j, i).within(contour)]
-            lm[j,] = 1
-            img[i,] = img[i,] * lm
-
-        return img
-##
+####
 
 #####
-class MRI(object):
+class MRI(PyramidalImage):
     """MultiResolution Image - a simple and convenient interface to access pixels from a
-    pyramidal image. The image is supposed to by stored in ZARR format (see README).
+    pyramidal image. The image is supposed to be stored in ZARR format (see README).
 
     Args:
         path (str): folder with a ZARR store providing the levels (indexed 0, 1, ...)
@@ -507,86 +500,27 @@ class MRI(object):
             * `extent`: a `2 x max_level` array with `extent[0,i]` and `extent[1,i]` indicating
                the width and height of level `i`, respectively
         _pyramid_levels (2 x N array): convenient access to level extents
-        _downsample_factors (vector): precomputed down-sampling factors
         _mag (Magnification): magnification converter
     """
-    _path = None
-    _info = None
-    _pyramid_levels = None
-
-    def __init__(self, path: Union[str|Path]):
-        self._path = Path(path) if path is str else path
-
-        z = zarr.open(self._path, mode='r')
-        self._info = z.attrs.asdict()
-
-        self._pyramid_levels = np.array(self._info["extent"], dtype=int)
-        self._downsample_factors = np.array([2**i for i in range(self._info['max_level'])], dtype=int)
-        self._mag = Magnification(self._info["objective_power"],
-                                  0.5 * (self._info["mpp_x"] + self._info["mpp_y"]),
-                                  level = 0,
-                                  n_levels = self._info["max_level"],
-                                  magnif_step = self._info["mag_step"])
-
+    def __init__(self, path: str|Path|PathLike):
+        with zarr.open(path, mode='r') as z:
+            self._info = z.attrs.asdict()
+        super().__init__(path,
+                         ImageShape(width=self._info['extent'][0][0], height=self._info['extent'][1][0]),
+                         Magnification(self._info["objective_power"],
+                                       0.5 * (self._info["mpp_x"] + self._info["mpp_y"]),
+                                       level = 0,
+                                       n_levels = self._info["max_level"],
+                                       magnif_step = self._info["mag_step"]))
 
     @property
-    def path(self) -> Path:
-        return self._path
+    def info(self) -> dict:
+        return self._info
 
-    @property
-    def widths(self) -> np.array:
-        # All widths for the pyramid levels
-        return self._pyramid_levels[0,:]
-
-    @property
-    def heights(self) -> np.array:
-        # All heights for the pyramid levels
-        return self._pyramid_levels[1,:]
-
-    def extent(self, level:int=0) -> (int, int):
+    def extent(self, level:int=0) -> (int, int): # TODO: remove in future versions
         # width, height for a given level
-        return tuple(self._pyramid_levels[:, level])
-
-    @property
-    def nlevels(self) -> int:
-        return self._info["max_level"]
-
-    def between_level_scaling_factor(self, from_level:int, to_level:int) -> float:
-        """Return the scaling factor for converting coordinates (magnification)
-        between two levels in the MRI.
-
-        Args:
-            from_level (int): original level
-            to_level (int): destination level
-
-        Returns:
-            float
-        """
-        f = self._downsample_factors[from_level] / self._downsample_factors[to_level]
-
-        return float(f)
-
-    def convert_px(self, point, from_level, to_level):
-        """Convert pixel coordinates of a point from <from_level> to
-        <to_level>
-
-        Args:
-            point (tuple): (x,y) coordinates in <from_level> plane
-            from_level (int): original image level
-            to_level (int): destination level
-
-        Returns:
-            x, y (float): new coordinates - no rounding is applied
-        """
-        if from_level == to_level:
-            return point  # no conversion is necessary
-        x, y = point
-        f = self.between_level_scaling_factor(from_level, to_level)
-        x *= f
-        y *= f
-
-        return x, y
-
+        s = self.shape(level)
+        return s.width, s.height
 
     def get_region_px(self, x0: int, y0: int,
                       width: int, height: int,
@@ -637,41 +571,41 @@ class MRI(object):
         return img
 
 
-    def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
-                                border: int=0, as_type=np.uint8) -> da.array:
-        """Returns a rectangular view of the image source that minimally covers a closed
-        contour (polygon). All pixels outside the contour are set to 0.
-
-        Args:
-            contour (shapely.geometry.Polygon): a closed polygonal line given in
-                terms of its vertices. The contour's coordinates are supposed to be
-                precomputed and to be represented in pixel units at the desired level.
-            level (int): image pyramid level
-            border (int): if > 0, take this many extra pixels in the rectangular
-                region (up to the limits on the image size)
-            as_type: pixel type for the returned image (array)
-
-        Returns:
-            a numpy.ndarray
-        """
-        x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
-        x0, y0 = max(0, x0-border), max(0, y0-border)
-        x1, y1 = min(x1+border, self.extent(level)[0]), \
-                 min(y1+border, self.extent(level)[1])
-        # Shift the annotation such that (0,0) will correspond to (x0, y0)
-        contour = sha.translate(contour, -x0, -y0)
-
-        # Read the corresponding region
-        img = self.get_region_px(x0, y0, x1-x0, y1-y0, level, as_type=as_type)
-
-        # Prepare mask
-        mask = np.zeros(img.shape[:2], dtype=as_type)
-        add_region(mask, shapely.get_coordinates(contour))
-
-        # Apply mask
-        img = apply_mask(img, mask)
-
-        return img
+    # def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
+    #                             border: int=0, as_type=np.uint8) -> da.array:
+    #     """Returns a rectangular view of the image source that minimally covers a closed
+    #     contour (polygon). All pixels outside the contour are set to 0.
+    #
+    #     Args:
+    #         contour (shapely.geometry.Polygon): a closed polygonal line given in
+    #             terms of its vertices. The contour's coordinates are supposed to be
+    #             precomputed and to be represented in pixel units at the desired level.
+    #         level (int): image pyramid level
+    #         border (int): if > 0, take this many extra pixels in the rectangular
+    #             region (up to the limits on the image size)
+    #         as_type: pixel type for the returned image (array)
+    #
+    #     Returns:
+    #         a numpy.ndarray
+    #     """
+    #     x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
+    #     x0, y0 = max(0, x0-border), max(0, y0-border)
+    #     x1, y1 = min(x1+border, self.extent(level)[0]), \
+    #              min(y1+border, self.extent(level)[1])
+    #     # Shift the annotation such that (0,0) will correspond to (x0, y0)
+    #     contour = sha.translate(contour, -x0, -y0)
+    #
+    #     # Read the corresponding region
+    #     img = self.get_region_px(x0, y0, x1-x0, y1-y0, level, as_type=as_type)
+    #
+    #     # Prepare mask
+    #     mask = np.zeros(img.shape[:2], dtype=as_type)
+    #     add_region(mask, shapely.get_coordinates(contour))
+    #
+    #     # Apply mask
+    #     img = apply_mask(img, mask)
+    #
+    #     return img
 ##
 
 #####
@@ -829,8 +763,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
 
 ##-
 def wsi2zarr(
-        wsi_path: Union[str|Path],
-        dst_path: Union[str|Path],
+        wsi_path: str|Path|PathLike,
+        dst_path: str|Path|PathLike,
         crop: Optional[Tuple[int,int,int,int]|bool],
         band_size: Optional[int]=1528,
 ) -> None:
@@ -843,12 +777,10 @@ def wsi2zarr(
     :param band_size: band height for processed regions
     :return: None
     """
-    if not isinstance(wsi_path, Path):
-        wsi_path = Path(wsi_path)
-    if not isinstance(dst_path, Path):
-        dst_path = Path(dst_path)
-        if not dst_path.exists():
-            dst_path.mkdir(parents=True, exist_ok=True)
+    wsi_path = Path(wsi_path)
+    dst_path = Path(dst_path)
+    if not dst_path.exists():
+        dst_path.mkdir(parents=True, exist_ok=True)
 
     wsi = WSI(wsi_path)
 
