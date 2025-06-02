@@ -30,7 +30,7 @@ import pandas as pd
 import wsitk_annot
 import joblib
 
-from compass.core import WSI, wsi2zarr, MRI, Px
+from compass.core import WSI, wsi2hdf5, MRI, Px
 from compass.sample import SampleManager
 
 _time = datetime.now()
@@ -193,7 +193,7 @@ def main() -> int:
     )
     p.add_argument(
         "--out", action="store",
-        help="path where to store the results. (<path>.cp/pyramid_0.zarr and <path>/annot_0). Last part of path is taken as sample name",
+        help="path where to store the results. (<path>.cp/pyramid_0.h5 and <path>/annot_0). Last part of <path> is taken as sample name",
         required=True
     )
     p.add_argument(
@@ -241,7 +241,7 @@ def main() -> int:
     x1, y1 = pp.x, pp.y
 
     # write the ROI from WSI into a pyramidal ZARR:
-    wsi2zarr(wsi_file, mgr.get_pyramid_path(0), crop=(x0, y0, x1-x0, y1-y0))
+    wsi2hdf5(wsi_file, mgr.get_pyramid_path(0), crop=(x0, y0, x1-x0, y1-y0))
 
     # process annotations (spots and gene expression)
     spots = pd.read_feather(args.spots)

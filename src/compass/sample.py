@@ -10,10 +10,8 @@
 # General structure of the folder holding the data for a sample:
 #
 #  <SAMPLE>.CP
-#       |---- pyramid_0.zarr
-#                |---- 0
-#                |...
-#       |---- pyramid_1.zarr
+#       |---- pyramid_0.h5
+#       |---- pyramid_1.h5
 #       .....
 #       |---- annot_0.json.gz      <- first annotation (compressed)
 #       |---- annot_1.json.gz
@@ -88,7 +86,7 @@ class SampleManager(object):
                 )
 
     def get_pyramid_path(self, pyramid_idx: int = 0) -> Path:
-        return self.full_path / f'pyramid_{pyramid_idx}.zarr'
+        return self.full_path / f'pyramid_{pyramid_idx}.h5'
 
     def get_annotation_path(self, ann_idx: int) -> Path:
         return self.full_path / f'annot_{ann_idx}.json.gz'

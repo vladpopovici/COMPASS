@@ -8,7 +8,7 @@
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 __version__ = 0.2
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 import pathlib
 from os import PathLike
 from math import floor
@@ -17,10 +17,12 @@ import dask.array as da
 from pathlib import Path
 import pyvips
 import shapely
-import zarr
+#import zarr
+import h5py
 import numpy as np
 import shapely.geometry as shg
 import shapely.affinity as sha
+
 from .mask import add_region, apply_mask
 from skimage.util import img_as_uint
 import simplejson as json
@@ -482,11 +484,10 @@ class WSI(PyramidalImage):
 #####
 class MRI(PyramidalImage):
     """MultiResolution Image - a simple and convenient interface to access pixels from a
-    pyramidal image. The image is supposed to be stored in ZARR format (see README).
+    pyramidal image. The image is supposed to be stored in HDF5 format (see README).
 
     Args:
-        path (str): folder with a ZARR store providing the levels (indexed 0, 1, ...)
-        of the pyramid
+        path (str): path to the .h5 file with image data
 
     Attributes:
         _path (Path)
@@ -503,8 +504,9 @@ class MRI(PyramidalImage):
         _mag (Magnification): magnification converter
     """
     def __init__(self, path: str|Path|PathLike):
-        with zarr.open(path, mode='r') as z:
-            self._info = z.attrs.asdict()
+        with h5py.File(path, mode='r') as z:
+            self._info = dict(z.attrs)
+
         super().__init__(path,
                          ImageShape(width=self._info['extent'][0][0], height=self._info['extent'][1][0]),
                          Magnification(self._info["objective_power"],
@@ -549,9 +551,10 @@ class MRI(PyramidalImage):
             raise RuntimeError("region out of layer's extent")
 
         #print(f"reading region from {self.path} at level {level}: {x0}, {y0} x {width}, {height}")
-        img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-
-        return np.array(img[y0:y0+height, x0:x0+width, ...])
+        #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
+        with h5py.File(self.path, mode='r') as z:
+            img = z[f'/{level}/data'][y0:y0+height, x0:x0+width, ...]
+        return img
 
 
     def get_plane(self, level: int = 0, as_type=np.uint8) -> da.array:
@@ -567,46 +570,10 @@ class MRI(PyramidalImage):
         if level < 0 or level >= self.nlevels:
             raise RuntimeError("requested level does not exist")
 
-        img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-
+        #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
+        with h5py.File(self.path, mode='r') as z:
+            img = z[f'/{level}/data'][:]
         return img
-
-
-    # def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
-    #                             border: int=0, as_type=np.uint8) -> da.array:
-    #     """Returns a rectangular view of the image source that minimally covers a closed
-    #     contour (polygon). All pixels outside the contour are set to 0.
-    #
-    #     Args:
-    #         contour (shapely.geometry.Polygon): a closed polygonal line given in
-    #             terms of its vertices. The contour's coordinates are supposed to be
-    #             precomputed and to be represented in pixel units at the desired level.
-    #         level (int): image pyramid level
-    #         border (int): if > 0, take this many extra pixels in the rectangular
-    #             region (up to the limits on the image size)
-    #         as_type: pixel type for the returned image (array)
-    #
-    #     Returns:
-    #         a numpy.ndarray
-    #     """
-    #     x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
-    #     x0, y0 = max(0, x0-border), max(0, y0-border)
-    #     x1, y1 = min(x1+border, self.extent(level)[0]), \
-    #              min(y1+border, self.extent(level)[1])
-    #     # Shift the annotation such that (0,0) will correspond to (x0, y0)
-    #     contour = sha.translate(contour, -x0, -y0)
-    #
-    #     # Read the corresponding region
-    #     img = self.get_region_px(x0, y0, x1-x0, y1-y0, level, as_type=as_type)
-    #
-    #     # Prepare mask
-    #     mask = np.zeros(img.shape[:2], dtype=as_type)
-    #     add_region(mask, shapely.get_coordinates(contour))
-    #
-    #     # Apply mask
-    #     img = apply_mask(img, mask)
-    #
-    #     return img
 ##
 
 #####
@@ -763,29 +730,112 @@ class NumpyJSONEncoder(json.JSONEncoder):
 ##
 
 ##-
-def wsi2zarr(
+# def wsi2zarr(
+#         wsi_path: str|Path|PathLike,
+#         dst_path: str|Path|PathLike,
+#         crop: Optional[Tuple[int,int,int,int]|bool],
+#         band_size: Optional[int]=1528,
+# ) -> None:
+#     """
+#     Converts a WSI file to pyramidal ZARR format.
+#
+#     :param wsi_path: source file path.
+#     :param dst_path: destination file path (normally a .zarr folder).
+#     :param crop: either bool to control auto-crop or (x0, y0, width, height) for the crop region
+#     :param band_size: band height for processed regions
+#     :return: None
+#     """
+#     wsi_path = Path(wsi_path)
+#     dst_path = Path(dst_path)
+#     if not dst_path.exists():
+#         dst_path.mkdir(parents=True, exist_ok=True)
+#
+#     wsi = WSI(wsi_path)
+#
+#     # initially, whole image
+#     x0, y0, width, height = (0, 0, wsi.info["width"], wsi.info["height"])
+#
+#     if isinstance(crop, bool):
+#         if crop and wsi.info['roi'] is not None:
+#             x0, y0, width, height = (wsi.info['roi']['x0'],
+#                                      wsi.info['roi']['y0'],
+#                                      wsi.info['roi']["width"],
+#                                      wsi.info['roi']["height"])
+#     else:
+#         if crop is not None:
+#             x0, y0, width, height = crop
+#             x0 = max(0, min(x0, wsi.info["width"]))
+#             y0 = max(0, min(y0, wsi.info["height"]))
+#             width = min(width, wsi.info["width"] - x0)
+#             height = min(height, wsi.info["height"] - y0)
+#
+#     levels = np.zeros((2, wsi.level_count), dtype=np.int64)
+#
+#     with (zarr.open_group(str(dst_path), mode='w') as root):
+#         for i in range(wsi.level_count):
+#             # copy levels from WSI, band by band...
+#             # -level i crop region:
+#             cx0 = int(floor(x0 / wsi.downsample_factor(i)))
+#             cy0 = int(floor(y0 / wsi.downsample_factor(i)))
+#             cw = int(floor(width / wsi.downsample_factor(i)))
+#             ch = int(floor(height / wsi.downsample_factor(i)))
+#             #print("ZARR writing crop: ", cx0, cy0, cw, ch, i)
+#
+#             im = pyvips.Image.new_from_file(str(wsi_path), level=i, autocrop=False)
+#             im = im.crop(cx0, cy0, cw, ch)
+#             im = im.flatten()
+#
+#             shape = (ch, cw, 3)  # YXC axes
+#             levels[:, i] = (cw, ch)
+#
+#             arr = root.zeros('/'+str(i), shape=shape, chunks=(4096, 4096, None), dtype="uint8")
+#             n_bands = ch // band_size
+#             incomplete_band = shape[0] % band_size
+#             for j in range(n_bands):  # by horizontal bands
+#                 buf = im.crop(0, j * band_size, cw, band_size).numpy()
+#                 arr[j * band_size : (j + 1) * band_size] = buf
+#                 # arr[j * band_size:(j + 1) * band_size, ...] = \
+#                 #     wsi.get_region_px(cx0, cy0+j*band_size, cw, band_size, as_type=np.uint8)
+#
+#             if incomplete_band > 0:
+#                 buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
+#                 arr[n_bands * band_size : n_bands * band_size + incomplete_band] = buf
+#                 # arr[n_bands * band_size: n_bands * band_size + incomplete_band, ...] = \
+#                 #     wsi.get_region_px(cx0, n_bands*band_size, cw, incomplete_band, as_type=np.uint8)
+#         root.attrs["max_level"] = wsi.level_count
+#         root.attrs["channel_names"] = ["R", "G", "B"]
+#         root.attrs["dimension_names"] = ["y", "x", "c"]
+#         root.attrs["mpp_x"] = wsi.info['mpp_x']
+#         root.attrs["mpp_y"] = wsi.info["mpp_y"]
+#         root.attrs["mag_step"] = int(wsi.info['magnification_step'])
+#         root.attrs["objective_power"] = wsi.info['objective_power']
+#         root.attrs["extent"] = levels.tolist()
+#
+#     return
+# ##
+
+##-
+def wsi2hdf5(
         wsi_path: str|Path|PathLike,
         dst_path: str|Path|PathLike,
         crop: Optional[Tuple[int,int,int,int]|bool],
         band_size: Optional[int]=1528,
 ) -> None:
     """
-    Converts a WSI file to pyramidal ZARR format.
+    Converts a WSI file to pyramidal format stored in HDF5.
 
     :param wsi_path: source file path.
-    :param dst_path: destination file path (normally a .zarr folder).
+    :param dst_path: destination file path (normally a .h5 file).
     :param crop: either bool to control auto-crop or (x0, y0, width, height) for the crop region
     :param band_size: band height for processed regions
     :return: None
     """
     wsi_path = Path(wsi_path)
-    dst_path = Path(dst_path)
-    if not dst_path.exists():
-        dst_path.mkdir(parents=True, exist_ok=True)
+    dst_path = Path(dst_path).with_suffix('.h5')
 
     wsi = WSI(wsi_path)
 
-    # initially, whole image
+    # initially, the whole image
     x0, y0, width, height = (0, 0, wsi.info["width"], wsi.info["height"])
 
     if isinstance(crop, bool):
@@ -804,7 +854,7 @@ def wsi2zarr(
 
     levels = np.zeros((2, wsi.level_count), dtype=np.int64)
 
-    with (zarr.open_group(str(dst_path), mode='w') as root):
+    with h5py.File(str(dst_path), 'w') as root:
         for i in range(wsi.level_count):
             # copy levels from WSI, band by band...
             # -level i crop region:
@@ -812,7 +862,6 @@ def wsi2zarr(
             cy0 = int(floor(y0 / wsi.downsample_factor(i)))
             cw = int(floor(width / wsi.downsample_factor(i)))
             ch = int(floor(height / wsi.downsample_factor(i)))
-            #print("ZARR writing crop: ", cx0, cy0, cw, ch, i)
 
             im = pyvips.Image.new_from_file(str(wsi_path), level=i, autocrop=False)
             im = im.crop(cx0, cy0, cw, ch)
@@ -821,20 +870,20 @@ def wsi2zarr(
             shape = (ch, cw, 3)  # YXC axes
             levels[:, i] = (cw, ch)
 
-            arr = root.zeros('/'+str(i), shape=shape, chunks=(4096, 4096, None), dtype="uint8")
+            current_level = root.create_group(str(i))
+            arr = current_level.create_dataset(
+                "data", shape=shape, chunks=True, dtype="uint8",
+                compression="lzf"
+            )
             n_bands = ch // band_size
             incomplete_band = shape[0] % band_size
             for j in range(n_bands):  # by horizontal bands
                 buf = im.crop(0, j * band_size, cw, band_size).numpy()
                 arr[j * band_size : (j + 1) * band_size] = buf
-                # arr[j * band_size:(j + 1) * band_size, ...] = \
-                #     wsi.get_region_px(cx0, cy0+j*band_size, cw, band_size, as_type=np.uint8)
 
             if incomplete_band > 0:
                 buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
                 arr[n_bands * band_size : n_bands * band_size + incomplete_band] = buf
-                # arr[n_bands * band_size: n_bands * band_size + incomplete_band, ...] = \
-                #     wsi.get_region_px(cx0, n_bands*band_size, cw, incomplete_band, as_type=np.uint8)
         root.attrs["max_level"] = wsi.level_count
         root.attrs["channel_names"] = ["R", "G", "B"]
         root.attrs["dimension_names"] = ["y", "x", "c"]

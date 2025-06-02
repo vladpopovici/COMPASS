@@ -1,6 +1,6 @@
 [project]
 name = "compass"
-version = "0.1.0"
+version = "0.1.5"
 description = "COMputational PAthology and Spatial Statistics"
 readme = "README.md"
 authors = [
@@ -12,6 +12,7 @@ dependencies = [
     "dask[complete]>=2024.12.0",
     "fastapi[standard]>=0.115.12",
     "geojson>=3.1.0",
+    "h5py>=3.13.0",
     "joblib>=1.4.2",
     "mahotas>=1.4.18",
     "mkdocs>=1.6.1",

@@ -2,22 +2,24 @@ COMPASS: Computational Pathology and Spatial Statistics
 ---
 
 This package contains both a rich library of functions for computational
-pathology and a collection of applications dealing with various problems
+pathology and a collection of applications dealing with various problems,
 including spatial transcriptomics. This broad coverage comes with the 
 price of installing many dependencies.
 
-To avoid having to dealing with various image (and data) formats (and their
-evolving specifications), we store the data in ZARR format, with images
-saved in pyramidal structures easily opened in [NAPARI](https://napari.org).
-An image pyramid is stored as a ZARR group and has a simple structure 
-(see wsitk-utils for a converter):
+To avoid having to deal with various image (and data) formats (and their
+evolving specifications), we store the data as arrays in HDF5 files, with images
+saved in pyramidal structures.
+An image pyramid is stored as a group with datasets (named "data") representing 
+its levels:
 ```
-pyramid_<k>
-   +--- 0 <- highest resolution (largest image)
-   +--- 1
+pyramid_<k>.h5
+   /--- 0 <- highest resolution (largest image)
+   /--- 1
    ...
-   +--- n <- lowest resolution 
+   /--- n-1 <- lowest resolution 
 ```
+To access a layer's data, one can use the path "/<level>/data" in HDF5 functions.
+
 In addition, "pyramid_<k>" has a few attributed (meta-data) guaranteed:
 * `max_level`: number of levels in the pyramid
 * `channel_names`: normally R, G, B, but others may be possible
@@ -29,7 +31,7 @@ In addition, "pyramid_<k>" has a few attributed (meta-data) guaranteed:
    the width and height of level `i`, respectively
 
 A tissue section may have several pyramids (`pyramid_0`, ..., `pyramid_n`) as long as they
-refer to the exact same specimen and they are aligned (registered). They may represent
-different modalities (e.g. H&E and IHC), or different versions of the same image (e.g.
-gray-scale or stain-normalized image). `pyramid_0` is taken as the reference and it defines
+refer to the exact same specimen, and they are aligned (registered). They may represent
+different modalities (e.g., H&E and IHC), or different versions of the same image (e.g.,
+gray-scale or stain-normalized image). `pyramid_0` is taken as the reference, and it defines
 the space in which the annotations are produced/saved, and all the analyses carried out.
