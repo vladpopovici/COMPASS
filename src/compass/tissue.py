@@ -35,7 +35,7 @@ def detect_foreground(img, method='fast-he', **kwargs):
     slide and returns a mask for them (0: background).
 
     Args:
-        img (ndarray H x W x 3): the image as an numpy array
+        img (ndarray H x W x 3): the image as a numpy array
         method (str): which method to use. Allowed values:
             'fast-he': uses OpenCV and simply processes the G-plane for
                 detecting the tissue regions in H&E images

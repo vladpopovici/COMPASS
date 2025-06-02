@@ -548,9 +548,10 @@ class MRI(PyramidalImage):
                 y0 + height > self.heights[level]:
             raise RuntimeError("region out of layer's extent")
 
+        #print(f"reading region from {self.path} at level {level}: {x0}, {y0} x {width}, {height}")
         img = da.from_zarr(self.path, component=str(level), dtype=as_type)
 
-        return img
+        return np.array(img[y0:y0+height, x0:x0+width, ...])
 
 
     def get_plane(self, level: int = 0, as_type=np.uint8) -> da.array:
