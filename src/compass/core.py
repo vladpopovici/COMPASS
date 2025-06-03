@@ -504,8 +504,11 @@ class MRI(PyramidalImage):
         _mag (Magnification): magnification converter
     """
     def __init__(self, path: str|Path|PathLike):
-        with h5py.File(path, mode='r') as z:
-            self._info = dict(z.attrs)
+        if not pathlib.Path(path).exists() or Path(path).suffix != '.h5':
+            raise ValueError(f"expected a .h5 file, got {path}")
+
+        self.__storage = h5py.File(path, mode='r', rdcc_nbytes=1024**2*64, rdcc_nslots=1e6)
+        self._info = dict(self.__storage.attrs)
 
         super().__init__(path,
                          ImageShape(width=self._info['extent'][0][0], height=self._info['extent'][1][0]),
@@ -514,6 +517,9 @@ class MRI(PyramidalImage):
                                        level = 0,
                                        n_levels = self._info["max_level"],
                                        magnif_step = self._info["mag_step"]))
+
+    def __del__(self):
+        self.__storage.close()
 
     @property
     def info(self) -> dict:
@@ -552,8 +558,9 @@ class MRI(PyramidalImage):
 
         #print(f"reading region from {self.path} at level {level}: {x0}, {y0} x {width}, {height}")
         #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-        with h5py.File(self.path, mode='r') as z:
-            img = z[f'/{level}/data'][y0:y0+height, x0:x0+width, ...]
+        #with h5py.File(self.path, mode='r') as z:
+        img = self.__storage[f'/{level}/data'][y0:y0+height, x0:x0+width, ...]
+
         return img
 
 
@@ -571,8 +578,9 @@ class MRI(PyramidalImage):
             raise RuntimeError("requested level does not exist")
 
         #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-        with h5py.File(self.path, mode='r') as z:
-            img = z[f'/{level}/data'][:]
+        #with h5py.File(self.path, mode='r') as z:
+        img = self.__storage[f'/{level}/data'][:]
+
         return img
 ##
 
