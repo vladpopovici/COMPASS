@@ -880,8 +880,10 @@ def wsi2hdf5(
 
             current_level = root.create_group(str(i))
             arr = current_level.create_dataset(
-                "data", shape=shape, chunks=True, dtype="uint8",
-                compression="lzf"
+                "data", shape=shape,
+                chunks=(min(512, ch), min(512, cw),3),
+                dtype="uint8",
+                #compression="lzf"
             )
             n_bands = ch // band_size
             incomplete_band = shape[0] % band_size
