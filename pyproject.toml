@@ -38,12 +38,12 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv.sources]
-wsitk-annot = { git = "http://github.com/vladpopovici/wsitk-annot" }
-
 [dependency-groups]
 dev = [
     "matplotlib>=3.10.1",
     "mkdocs-material>=9.6.14",
     "mkdocstrings[python]>=0.29.1",
 ]
+
+[tool.uv.sources]
+wsitk-annot = { git = "http://github.com/vladpopovici/wsitk-annot" }

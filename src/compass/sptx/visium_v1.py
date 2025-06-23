@@ -26,13 +26,14 @@ from math import ceil, log2
 
 from skimage.morphology import disk, binary_dilation
 from skimage.filters import threshold_sauvola, median, sobel_h, sobel_v
-from skimage.transform import rescale, probabilistic_hough_line, warp
+from skimage.transform import rescale, probabilistic_hough_line
 from skimage.color import rgb2lab
 from skimage.metrics import structural_similarity
 from skimage.io import imread #, imsave
-from skimage.registration import optical_flow_tvl1
+from skimage.measure import label, regionprops
+from skimage.draw import disk as draw_disk
 
-import cv2 as cv
+import cv2
 import numpy as np
 
 VISIUM1 = {
@@ -59,27 +60,27 @@ def register_patch(img1: np.array, img2: np.array,
     # img2: sensed image (patch)
     # resize_factor: work resolution for registration
 
-    img1 = cv.cvtColor(img1, cv.COLOR_RGB2GRAY)
-    img2 = cv.cvtColor(img2, cv.COLOR_RGB2GRAY)
+    img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
 
-    img1_rs = cv.resize(
+    img1_rs = cv2.resize(
         img1,
         (0,0), fx=resize_factor, fy=resize_factor
     )
-    img2_rs = cv.resize(
+    img2_rs = cv2.resize(
         img2,
         (0,0), fx=resize_factor, fy=resize_factor
     )
 
     # Initiate SIFT detector
-    sift_detector = cv.SIFT_create()
+    sift_detector = cv2.SIFT_create()
 
     # Find the key points and descriptors with SIFT on the lower resolution images
     kp1, des1 = sift_detector.detectAndCompute(img1_rs, None)
     kp2, des2 = sift_detector.detectAndCompute(img2_rs, None)
 
     # BFMatcher with default params
-    bf = cv.BFMatcher()
+    bf = cv2.BFMatcher()
     matches = bf.knnMatch(des1, des2, k=2)
 
     # Filter out poor matches
@@ -99,7 +100,7 @@ def register_patch(img1: np.array, img2: np.array,
     # Find homography
     if points1.shape[0] <= min_matching_points:
         return None
-    H, mask = cv.findHomography(points1, points2, cv.RANSAC)
+    H, mask = cv2.findHomography(points1, points2, cv2.RANSAC)
 
     # Get low-res and high-res sizes
     low_height, low_width = img1_rs.shape
@@ -122,8 +123,8 @@ def register_patch(img1: np.array, img2: np.array,
     )
 
     # Compute scaling transformations
-    scale_up = cv.getPerspectiveTransform(low_size, high_size)
-    scale_down = cv.getPerspectiveTransform(high_size, low_size)
+    scale_up = cv2.getPerspectiveTransform(low_size, high_size)
+    scale_down = cv2.getPerspectiveTransform(high_size, low_size)
 
     # Combine the transformations. Remember that the order of the transformation
     # is reversed when doing matrix multiplication
@@ -132,7 +133,7 @@ def register_patch(img1: np.array, img2: np.array,
     scale_down_h_scale_up = np.matmul(h_and_scale_up, scale_down)
 
     # Warp image 1 to align with image 2
-    #img1Reg = cv.warpPerspective(
+    #img1Reg = cv2.warpPerspective(
     #            img1,
     #            scale_down_h_scale_up,
     #            (img2.shape[1], img2.shape[0])
@@ -295,7 +296,7 @@ def get_affine_transformation_per_region(
             H = register_patch(hr_img, P)
 
             if H is not None:
-                tP = cv.warpPerspective(hr_img, H, (P.shape[1], P.shape[0]))
+                tP = cv2.warpPerspective(hr_img, H, (P.shape[1], P.shape[0]))
                 match_quality[i,j] = structural_similarity(tP, P, win_size=35, channel_axis=2)
                 #imsave(f"p_{i}_{j}.jpg", P)
 
@@ -326,3 +327,147 @@ def get_affine_transformation_per_region(
         j += 1
 
     return matches
+
+# Miscellaneous support functions:
+def get_binary_spots(img):
+    # process img to get the spots (features) as white objects on black background
+    _, im_bin = cv2.threshold(
+        img,
+        0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    )  # features are darker, make them white at the end
+    im_bin_tmp = im_bin.copy()
+    h, w = im_bin.shape[:2]  # nrows, ncols
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+    cv2.floodFill(im_bin_tmp, mask, (0, 0), 255)
+    im_bin_tmp = cv2.bitwise_not(im_bin_tmp)
+    return im_bin | im_bin_tmp
+
+
+def get_properties(binary_img: np.array) -> tuple:
+    lb = label(binary_img, background=0)
+    pp = regionprops(lb)
+    return [
+        {
+            'area': p.area,
+            'centroid': p.centroid,
+            'circ': 4 * np.pi * p.area / p.perimeter ** 2 if p.perimeter > 0 else np.inf,
+            'label': p.label,
+            'radii': (p.axis_major_length / 2, p.axis_minor_length / 2),
+            'rr': p.axis_minor_length / p.axis_major_length if p.axis_major_length > 0 else np.inf,
+        }
+        for p in pp
+    ], lb
+
+
+# keep only the most probable spots: circular, not too small
+def filter_spots(binary_img, lb_img, props, min_area=300, min_circ=0.85, min_rr=0.9) -> tuple:
+    pp = []
+
+    for p in props:
+        if p['area'] < min_area or \
+                p['circ'] < min_circ or \
+                p['rr'] < min_rr:
+            # erase the object
+            binary_img[lb_img == p['label']] = 0
+        else:
+            pp.append(p)
+
+    return binary_img, pp
+
+
+def synthetic_spots(shape: tuple, props: list) -> tuple:
+    # create a binary image of shape <shape> with spots placed at the
+    # centroids of objects in <props>, all having the radius the median
+    # of the radii in <props>
+    img = np.zeros(shape, dtype=np.uint8)
+    r = [0.5 * (p['radii'][0] + p['radii'][1]) for p in props]
+    r = np.median(r)
+
+    for p in props:
+        [rr, cc] = draw_disk((int(p['centroid'][0]), int(p['centroid'][1])), r, shape=shape)
+        img[rr, cc] = 255
+
+    return img, r
+
+
+def match_patch(tmpl: np.ndarray, img: np.ndarray,
+                angles: np.ndarray = np.linspace(0, 360, 37),
+                scales: np.ndarray = np.linspace(0.8, 1.2, 9)) -> dict:
+    """Find a template image within a larger image using template matching with rotation and scaling.
+
+    Args:
+        tmpl: Template image (grayscale) to search for
+        img: Larger image (grayscale) to search within
+        angles: Array of rotation angles in degrees to test (default: 37 angles from 0 to 360)
+        scales: Array of scaling factors to test (default: 9 values from 0.8 to 1.2)
+
+    Returns:
+        dict: Dictionary containing best match information with keys:
+            - 'score': Correlation coefficient (-1 to 1)
+            - 'angle': Best rotation angle in degrees
+            - 'scale': Best scaling factor
+            - 'loc': (x,y) tuple of top-left corner position in img
+    """
+
+    best = {'score': -1.0, 'angle': None, 'scale': None, 'loc': None, 'tmpl': None}
+
+    for scale in scales:
+        if np.isnan(scale):
+            continue
+        # resize template
+        sz = (int(tmpl.shape[1] * scale), int(tmpl.shape[0] * scale))
+        if sz[0] < 4 or sz[1] < 4:  # too small to match
+            continue
+        scaled = cv2.resize(tmpl, sz, interpolation=cv2.INTER_LINEAR)
+
+        for angle in angles:
+            # rotate about its center
+            M = cv2.getRotationMatrix2D((sz[0] / 2, sz[1] / 2), angle, 1.0)
+            rot = cv2.warpAffine(scaled, M, sz,
+                                 flags=cv2.INTER_LINEAR,
+                                 borderMode=cv2.BORDER_REPLICATE)
+
+            # template match
+            res = cv2.matchTemplate(img, rot, cv2.TM_CCOEFF_NORMED)
+            _, score, _, loc = cv2.minMaxLoc(res)
+
+            if score > best['score']:
+                best.update({
+                    'score': score,
+                    'angle': angle,
+                    'scale': scale,
+                    'loc': loc,  # top-left corner in img
+                    'tmpl': rot
+                })
+    return best  # best transformation
+
+
+def get_corners(img: np.ndarray, n_segm: int = 6) -> dict:
+    """Get corners of the image using template matching.
+
+    Args:
+        img: Image to find corners in
+        n_segm: Number of segments to divide the image into for corner detection
+
+    Returns:
+        dict: Dictionary with corner positions and templates
+    """
+    h, w = img.shape[:2]
+    hs = h // n_segm
+    ws = w // n_segm
+
+    corners = {
+        'TL': img[0: hs, 0: ws, ...],
+        'TR': img[0: hs, w - ws: w, ...],
+        'BL': img[h - hs: h, 0: ws, ...],
+        'BR': img[h - hs: h, w - ws: w, ...]
+    }
+    proc_corners = {}
+    for side in ['TL', 'TR', 'BL', 'BR']:
+        bin_img = get_binary_spots(corners[side])
+        pp, lb = get_properties(bin_img)
+        bin_img, pp = filter_spots(bin_img, lb, pp)
+        proc_corners[side], r = synthetic_spots(bin_img.shape, pp)
+        proc_corners[side + '_spot_size'] = r
+
+    return proc_corners
