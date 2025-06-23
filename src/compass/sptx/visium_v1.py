@@ -471,3 +471,31 @@ def get_corners(img: np.ndarray, n_segm: int = 6) -> dict:
         proc_corners[side + '_spot_size'] = r
 
     return proc_corners
+
+
+def match_templates_to_corners(templ: dict, corners: dict, k_list: list=('BL', 'BR', 'TR', 'TL')) -> dict:
+    # Normally, templ contains templates for 4 corners (labelled 'BL', ...) and corners contains
+    # regions of the target image corresponding to the corners (still labelled 'BL', ...) that
+    # are put in correspondence with the template. The function returns the mapping from template
+    # corners to image corners and the associated scores, etc.
+    # Both <templ> and <corners> must have been preprocessed by get_corners() or similar, to have
+    # the 'BL_spot_size', ... etc properly defined.
+    corner_match = {}
+    for ts in k_list: # testing order for templates matters
+        best_score = -1.0
+        best_part_corner = ""
+        saved_match = None
+        for hs in k_list:
+            # find an estimate of the scale factor between himg and template
+            scale = corners[hs+'_spot_size'] / templ[ts+'_spot_size']
+            best_match = match_patch(templ[ts], corners[hs],
+                                    scales=scale*np.ones((5,), dtype=np.float64) + [-0.2, -0.1, 0, 0.1, 0.2],
+                                    angles=[0, 5, 85, 90, 95, 175, 180, 185, 265, 270, 275] # type: ignore
+                                    )
+            if best_match['score'] > best_score:
+                best_score = best_match['score']
+                best_part_corner = hs
+                saved_match = best_match
+        corner_match[ts] = {'corner': best_part_corner, 'match': saved_match}
+
+    return corner_match
