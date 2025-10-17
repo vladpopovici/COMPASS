@@ -128,16 +128,16 @@ from __future__ import annotations
 
 __version__ = '2025.1.1'
 
-__all__ = [
-    '__version__',
-    'translation',
-    'similarity',
-    'similarity_matrix',
-    'logpolar',
-    'highpass',
-    'imread',
-    'imshow',
-]
+# __all__ = [
+#     '__version__',
+#     'translation',
+#     'similarity',
+#     'similarity_matrix',
+#     'logpolar',
+#     'highpass',
+#     'imread',
+#     'imshow',
+# ]
 
 import math
 import os
@@ -332,59 +332,59 @@ def highpass(shape: tuple[int, ...]) -> NDArray[Any]:
     )
     return (1.0 - x) * (2.0 - x)
 
-
-def imread(
-    fname: str | os.PathLike,
-    /,
-    *,
-    norm: bool = True,
-) -> NDArray[Any]:
-    """Return image data from img&hdr uint8 files."""
-    fname = os.fspath(fname)
-    with open(fname + '.hdr', encoding='utf-8') as fh:
-        hdr = fh.readlines()
-    img = numpy.fromfile(fname + '.img', numpy.uint8, -1)
-    img.shape = int(hdr[4].split()[-1]), int(hdr[3].split()[-1])
-    if norm:
-        img = img.astype(numpy.float64)
-        img /= 255.0  # type: ignore
-    return img
-
-
-def imshow(
-    im0: ArrayLike,
-    im1: ArrayLike,
-    im2: ArrayLike,
-    im3: ArrayLike | None = None,
-    /,
-    *,
-    cmap: str | None = None,
-    **kwargs,
-) -> None:
-    """Plot images using matplotlib."""
-    from matplotlib import pyplot
-
-    im0 = numpy.asanyarray(im0)
-    im1 = numpy.asanyarray(im1)
-    im2 = numpy.asanyarray(im2)
-    if im3 is None:
-        im3 = abs(im2 - im0)
-    pyplot.subplot(221)
-    pyplot.imshow(im0, cmap, **kwargs)
-    pyplot.subplot(222)
-    pyplot.imshow(im1, cmap, **kwargs)
-    pyplot.subplot(223)
-    pyplot.imshow(im3, cmap, **kwargs)
-    pyplot.subplot(224)
-    pyplot.imshow(im2, cmap, **kwargs)
-    pyplot.show()
-
-
-if __name__ == '__main__':
-    import doctest
-
-    try:
-        os.chdir('data')
-    except Exception:
-        pass
-    doctest.testmod()
+#
+# def imread(
+#     fname: str | os.PathLike,
+#     /,
+#     *,
+#     norm: bool = True,
+# ) -> NDArray[Any]:
+#     """Return image data from img&hdr uint8 files."""
+#     fname = os.fspath(fname)
+#     with open(fname + '.hdr', encoding='utf-8') as fh:
+#         hdr = fh.readlines()
+#     img = numpy.fromfile(fname + '.img', numpy.uint8, -1)
+#     img.shape = int(hdr[4].split()[-1]), int(hdr[3].split()[-1])
+#     if norm:
+#         img = img.astype(numpy.float64)
+#         img /= 255.0  # type: ignore
+#     return img
+#
+#
+# def imshow(
+#     im0: ArrayLike,
+#     im1: ArrayLike,
+#     im2: ArrayLike,
+#     im3: ArrayLike | None = None,
+#     /,
+#     *,
+#     cmap: str | None = None,
+#     **kwargs,
+# ) -> None:
+#     """Plot images using matplotlib."""
+#     from matplotlib import pyplot
+#
+#     im0 = numpy.asanyarray(im0)
+#     im1 = numpy.asanyarray(im1)
+#     im2 = numpy.asanyarray(im2)
+#     if im3 is None:
+#         im3 = abs(im2 - im0)
+#     pyplot.subplot(221)
+#     pyplot.imshow(im0, cmap, **kwargs)
+#     pyplot.subplot(222)
+#     pyplot.imshow(im1, cmap, **kwargs)
+#     pyplot.subplot(223)
+#     pyplot.imshow(im3, cmap, **kwargs)
+#     pyplot.subplot(224)
+#     pyplot.imshow(im2, cmap, **kwargs)
+#     pyplot.show()
+#
+#
+# if __name__ == '__main__':
+#     import doctest
+#
+#     try:
+#         os.chdir('data')
+#     except Exception:
+#         pass
+#     doctest.testmod()

@@ -12,6 +12,6 @@ import wsitk_annot as ann
 
 """
 COMPASS.ANNOT: module to handle annotations specific to COMPASS. It complements (and
-make use of) wsitk_annot.
+makes use of) wsitk_annot.
 """
 

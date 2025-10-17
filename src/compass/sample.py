@@ -51,7 +51,7 @@ class SampleManager(object):
         if mode not in ['r', 'w', 'a']: # read/write/append
             raise RuntimeError('unknown mode specified')
         if mode == 'r' or mode == 'a':
-            if not self.full_path.exists() or not self.get_annotation_path.exists():
+            if not self.full_path.exists() or not self.get_annot_registry_path.exists():
                 raise RuntimeError('sample or annotation path does not exist')
             self._load_annot_registry()
         else:

@@ -1,5 +1,8 @@
 COMPASS: Computational Pathology and Spatial Statistics
----
+===============================================================
+
+Design principles
+-----------------
 
 This package contains both a rich library of functions for computational
 pathology and a collection of applications dealing with various problems,
@@ -35,3 +38,10 @@ refer to the exact same specimen, and they are aligned (registered). They may re
 different modalities (e.g., H&E and IHC), or different versions of the same image (e.g.,
 gray-scale or stain-normalized image). `pyramid_0` is taken as the reference, and it defines
 the space in which the annotations are produced/saved, and all the analyses carried out.
+
+
+Requirements
+----------------
+
+1. Openslide
+2. PyVIPS - make sure it is able to use openslide for reading whole-slide images.

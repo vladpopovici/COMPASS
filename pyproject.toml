@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "vladpopovici", email = "popovici@bioxlab.org" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = [
     "configargparse>=1.7",
     "dask[complete]>=2024.12.0",
