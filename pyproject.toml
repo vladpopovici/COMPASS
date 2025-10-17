@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "vladpopovici", email = "popovici@bioxlab.org" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "configargparse>=1.7",
     "dask[complete]>=2024.0.0",
@@ -26,7 +26,7 @@ dependencies = [
     "pyvips>=2.2.3",
     "scikit-image>=0.24.0",
     "scikit-learn>=1.6.0",
-    "scipy>=1.12.0",
+    "scipy>=1.14.0",
     "shapely>=2.0.6",
     "simplejson>=3.19.3",
     "wsitk-annot",
