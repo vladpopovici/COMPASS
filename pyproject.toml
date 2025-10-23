@@ -46,4 +46,4 @@ dev = [
 ]
 
 [tool.uv.sources]
-wsitk-annot = { git = "http://github.com/vladpopovici/wsitk-annot" }
+wsitk-annot = { git = "https://github.com/vladpopovici/wsitk-annot" }
