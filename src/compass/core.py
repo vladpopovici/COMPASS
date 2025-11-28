@@ -17,29 +17,33 @@ import dask.array as da
 from pathlib import Path
 import pyvips
 import shapely
-#import zarr
 import h5py
 import numpy as np
 import shapely.geometry as shg
 import shapely.affinity as sha
 
-from .mask import add_region, apply_mask
+from mask import add_region, apply_mask
 from skimage.util import img_as_uint
 import simplejson as json
 import openslide as osl
 from pydantic import BaseModel
 
+
 class ImageShape(BaseModel):  # = NewType("ImageShape", dict[str, int])
     width: int
     height: int
+
 
 class Px(BaseModel):  # Pixel: int coords
     x: int
     y: int
 
+
 """
 COMPASS.CORE: core classes and functions.
 """
+
+
 #####
 class Magnification:
     """Magnification establishes the mapping between physical dimensions, pixel size,
@@ -208,6 +212,15 @@ class Magnification:
 
         return float(self.__mpp[level])
 
+    @property
+    def base_magnif(self):
+        return self._base_magnif
+
+    @property
+    def base_mpp(self):
+        return self._base_mpp
+
+
 ##
 
 #####
@@ -215,7 +228,7 @@ class PyramidalImage(ABC):
     """Abstract base class for a pyramidal image. It provide the basic API
     for storing information about and interacting with the image."""
 
-    def __init__(self, path: pathlib.Path|str|PathLike,
+    def __init__(self, path: pathlib.Path | str | PathLike,
                  base_dim: ImageShape = ImageShape(width=0, height=0),
                  magnif: Magnification = None):
         """Construct an abstract pyramidal image: basic knowledge of storage
@@ -225,7 +238,7 @@ class PyramidalImage(ABC):
         """
         self._path: pathlib.Path = pathlib.Path(path)
         self._mag: Magnification = magnif
-        self._pyramid_levels: np.array = None
+        self._pyramid_levels: np.ndarray | None = None
         self._base_dim: ImageShape = base_dim
         self._nlevels: int = 0
         if self._mag is not None:
@@ -234,8 +247,9 @@ class PyramidalImage(ABC):
             self._pyramid_levels[0, 0] = self._base_dim.width
             self._pyramid_levels[1, 0] = self._base_dim.height
             for lv in range(1, self._mag.nlevels):
-                self._pyramid_levels[0, lv] = int(self._pyramid_levels[0, lv-1] / self._mag.magnif_step)
-                self._pyramid_levels[1, lv] = int(self._pyramid_levels[1, lv-1] / self._mag.magnif_step)
+                self._pyramid_levels[0, lv] = int(self._pyramid_levels[0, lv - 1] / self._mag.magnif_step)
+                self._pyramid_levels[1, lv] = int(self._pyramid_levels[1, lv - 1] / self._mag.magnif_step)
+
     # end
 
     @property
@@ -253,11 +267,11 @@ class PyramidalImage(ABC):
 
     @property
     def get_native_magnification(self) -> float:
-        return self._mag._base_magnif
+        return self._mag.base_magnif
 
     @property
     def get_native_resolution(self) -> float:
-        return self._mag._base_mpp
+        return self._mag.base_mpp
 
     def get_level_for_magnification(self, mag: float, eps=1e-6) -> int:
         return self._mag.get_level_for_magnif(mag)
@@ -280,16 +294,17 @@ class PyramidalImage(ABC):
     def shape(self, level: int = 0) -> ImageShape:
         return ImageShape(width=int(self._pyramid_levels[0, level]),
                           height=int(self._pyramid_levels[1, level]))
+
     @property
     def pyramid_levels(self):
         return self._pyramid_levels
 
     @property
-    def widths(self) -> np.array:
+    def widths(self) -> np.ndarray:
         return self._pyramid_levels[0, :]
 
     @property
-    def heights(self) -> np.array:
+    def heights(self) -> np.ndarray:
         return self._pyramid_levels[1, :]
 
     def between_level_scaling_factor(self, from_level: int, to_level: int) -> float:
@@ -319,49 +334,42 @@ class PyramidalImage(ABC):
         return self.get_region_px(0, 0, self.widths[level], self.heights[level], level, as_type)
 
     def get_polygonal_region_px(self, contour: shg.Polygon, level: int,
-                                    border: int = 0, as_type=np.uint8) -> np.ndarray:
-            """Returns a rectangular view of the image source that minimally covers a closed
-            contour (polygon). All pixels outside the contour are set to 0.
+                                border: int = 0, as_type=np.uint8) -> np.ndarray:
+        """Returns a rectangular view of the image source that minimally covers a closed
+        contour (polygon). All pixels outside the contour are set to 0.
 
-            Args:
-                contour (shapely.geometry.Polygon): a closed polygonal line given in
-                    terms of its vertices. The contour's coordinates are supposed to be
-                    precomputed and to be represented in pixel units at the desired level.
-                level (int): image pyramid level
-                border (int): if > 0, take this many extra pixels in the rectangular
-                    region (up to the limits on the image size)
-                as_type: pixel type for the returned image (array)
+        Args:
+            contour (shapely.geometry.Polygon): a closed polygonal line given in
+                terms of its vertices. The contour's coordinates are supposed to be
+                precomputed and to be represented in pixel units at the desired level.
+            level (int): image pyramid level
+            border (int): if > 0, take this many extra pixels in the rectangular
+                region (up to the limits on the image size)
+            as_type: pixel type for the returned image (array)
 
-            Returns:
-                a numpy.ndarray
-            """
-            x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
-            x0, y0 = max(0, x0 - border), max(0, y0 - border)
-            x1, y1 = min(x1 + border, self.shape(level).width), \
-                min(y1 + border, self.shape(level).height)
-            # Shift the annotation such that (0,0) will correspond to (x0, y0)
-            contour = sha.translate(contour, -x0, -y0)
+        Returns:
+            a numpy.ndarray
+        """
+        x0, y0, x1, y1 = [int(_z) for _z in contour.bounds]
+        x0, y0 = max(0, x0 - border), max(0, y0 - border)
+        x1, y1 = min(x1 + border, self.shape(level).width), \
+            min(y1 + border, self.shape(level).height)
+        # Shift the annotation such that (0,0) will correspond to (x0, y0)
+        contour = sha.translate(contour, -x0, -y0)
 
-            # Read the corresponding region
-            img = self.get_region_px(x0, y0, x1 - x0, y1 - y0, level, as_type=as_type)
+        # Read the corresponding region
+        img = self.get_region_px(x0, y0, x1 - x0, y1 - y0, level, as_type=as_type)
 
-            # Prepare mask
-            mask = np.zeros(img.shape[:2], dtype=as_type)
-            add_region(mask, shapely.get_coordinates(contour))
+        # Prepare mask
+        mask = np.zeros(img.shape[:2], dtype=as_type)
+        add_region(mask, shapely.get_coordinates(contour))
 
-            # Apply mask
-            img = apply_mask(img, mask)
+        # Apply mask
+        img = apply_mask(img, mask)
 
-            # # mask out the points outside the contour
-            # for i in np.arange(img.shape[0]):
-            #     # line mask
-            #     lm = np.zeros((img.shape[1], img.shape[2]), dtype=img.dtype)
-            #     j = [_j for _j in np.arange(img.shape[1]) if shg.Point(_j, i).within(contour)]
-            #     lm[j,] = 1
-            #     img[i,] = img[i,] * lm
-
-            return img
+        return img
     ##
+
 
 #####
 class WSI(PyramidalImage):
@@ -383,13 +391,13 @@ class WSI(PyramidalImage):
         # rename some of the most important properties:
         self._info = {
             'objective_power': float(slide_meta[osl.PROPERTY_NAME_OBJECTIVE_POWER]),
-            'width':  slide_src.dimensions[0],
+            'width': slide_src.dimensions[0],
             'height': slide_src.dimensions[1],
-            'mpp_x': float(slide_meta[osl.PROPERTY_NAME_MPP_X]), # microns/pixel
+            'mpp_x': float(slide_meta[osl.PROPERTY_NAME_MPP_X]),  # microns/pixel
             'mpp_y': float(slide_meta[osl.PROPERTY_NAME_MPP_Y]),
-            'n_levels': slide_src.level_count,    # no. of levels in pyramid
+            'n_levels': slide_src.level_count,  # no. of levels in pyramid
             'magnification_step': slide_src.level_downsamples[1] / slide_src.level_downsamples[0],
-            'roi': None,
+            'roi': dict(),
             'background': 0xFF
         }
         # optional properties:
@@ -419,16 +427,14 @@ class WSI(PyramidalImage):
         """Return the number of levels in the multi-resolution pyramid."""
         return self.nlevels
 
-
-    def downsample_factor(self, level:int) -> int:
+    def downsample_factor(self, level: int) -> int:
         """Return the down-sampling factor (relative to level 0) for a given level."""
         if level < 0 or level >= self.nlevels:
             return -1
 
         return int(floor(self._mag.magnif_step ** level))
 
-
-    def get_extent_at_level(self, level: int) -> Optional[ImageShape]: # TODO: remove in future versions
+    def get_extent_at_level(self, level: int) -> Optional[ImageShape]:  # TODO: remove in future versions
         """Returns width and height of the image at a desired level.
 
         Args:
@@ -479,6 +485,8 @@ class WSI(PyramidalImage):
             img = img[..., :-1]
 
         return img.astype(as_type)
+
+
 ####
 
 #####
@@ -503,20 +511,21 @@ class MRI(PyramidalImage):
         _pyramid_levels (2 x N array): convenient access to level extents
         _mag (Magnification): magnification converter
     """
-    def __init__(self, path: str|Path|PathLike):
+
+    def __init__(self, path: str | Path | PathLike):
         if not pathlib.Path(path).exists() or Path(path).suffix != '.h5':
             raise ValueError(f"expected a .h5 file, got {path}")
 
-        self.__storage = h5py.File(path, mode='r', rdcc_nbytes=1024**2*64, rdcc_nslots=1e6)
+        self.__storage = h5py.File(path, mode='r', rdcc_nbytes=1024 ** 2 * 64, rdcc_nslots=1e6)
         self._info = dict(self.__storage.attrs)
 
         super().__init__(path,
-                         ImageShape(width=self._info['extent'][0][0], height=self._info['extent'][1][0]),
-                         Magnification(self._info["objective_power"],
-                                       0.5 * (self._info["mpp_x"] + self._info["mpp_y"]),
-                                       level = 0,
-                                       n_levels = self._info["max_level"],
-                                       magnif_step = self._info["mag_step"]))
+                         ImageShape(width=int(self._info['extent'][0][0]), height=int(self._info['extent'][1][0])),
+                         Magnification(float(self._info["objective_power"]),
+                                       0.5 * (float(self._info["mpp_x"]) + float(self._info["mpp_y"])),
+                                       level=0,
+                                       n_levels=int(self._info["max_level"]),
+                                       magnif_step=float(self._info["mag_step"])))
 
     def __del__(self):
         self.__storage.close()
@@ -525,14 +534,14 @@ class MRI(PyramidalImage):
     def info(self) -> dict:
         return self._info
 
-    def extent(self, level:int=0) -> (int, int): # TODO: remove in future versions
+    def extent(self, level: int = 0) -> tuple[int, int]:  # TODO: remove in future versions
         # width, height for a given level
         s = self.shape(level)
         return s.width, s.height
 
     def get_region_px(self, x0: int, y0: int,
                       width: int, height: int,
-                      level: int=0, as_type=np.uint8) -> np.array:
+                      level: int = 0, as_type=np.uint8) -> np.ndarray:
         """Read a region from the image source. The region is specified in
             pixel coordinates.
 
@@ -556,13 +565,12 @@ class MRI(PyramidalImage):
                 y0 + height > self.heights[level]:
             raise RuntimeError("region out of layer's extent")
 
-        #print(f"reading region from {self.path} at level {level}: {x0}, {y0} x {width}, {height}")
-        #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-        #with h5py.File(self.path, mode='r') as z:
-        img = self.__storage[f'/{level}/data'][y0:y0+height, x0:x0+width, ...]
+        # print(f"reading region from {self.path} at level {level}: {x0}, {y0} x {width}, {height}")
+        # img = da.from_zarr(self.path, component=str(level), dtype=as_type)
+        # with h5py.File(self.path, mode='r') as z:
+        img = self.__storage[f'/{level}/data'][y0:y0 + height, x0:x0 + width, ...]
 
         return img
-
 
     def get_plane(self, level: int = 0, as_type=np.uint8) -> da.array:
         """Read a whole plane from the image pyramid and return it as a Numpy array.
@@ -577,11 +585,11 @@ class MRI(PyramidalImage):
         if level < 0 or level >= self.nlevels:
             raise RuntimeError("requested level does not exist")
 
-        #img = da.from_zarr(self.path, component=str(level), dtype=as_type)
-        #with h5py.File(self.path, mode='r') as z:
-        img = self.__storage[f'/{level}/data'][:]
+        img = da.array(self.__storage[f'/{level}/data'])[:]
 
         return img
+
+
 ##
 
 #####
@@ -609,7 +617,7 @@ class NumpyImage:
             return 1
 
     @staticmethod
-    def is_empty(img: np.array, empty_level: float=0) -> bool:
+    def is_empty(img: np.ndarray, empty_level: float = 0) -> bool:
         """Is the image empty?
 
         Args:
@@ -624,7 +632,7 @@ class NumpyImage:
         return img.sum() <= empty_level
 
     @staticmethod
-    def is_almost_white(img: np.array, almost_white_level: float=254, max_stddev: float=1.5) -> bool:
+    def is_almost_white(img: np.ndarray, almost_white_level: float = 254, max_stddev: float = 1.5) -> bool:
         """Is the image almost white?
 
         Args:
@@ -639,6 +647,8 @@ class NumpyImage:
         """
 
         return (img.mean() >= almost_white_level) and (img.std() <= max_stddev)
+
+
 ##-
 
 #### Utilities
@@ -652,6 +662,7 @@ def G_(_img: np.ndarray) -> np.ndarray:
 
 def B_(_img: np.ndarray) -> np.ndarray:
     return _img[:, :, 2]
+
 
 def rgb2ycbcr(im: np.ndarray) -> np.ndarray:
     """
@@ -683,6 +694,8 @@ def rgb2ycbcr(im: np.ndarray) -> np.ndarray:
     im_res = np.array(np.round(r), dtype=im.dtype)
 
     return im_res
+
+
 ## end rgb2ycbcr
 
 
@@ -720,6 +733,8 @@ def ycbcr2rgb(im: np.ndarray) -> np.ndarray:
     im_res = np.array(r.reshape((h, w, c)), dtype=np.uint8)
 
     return im_res
+
+
 ## end ycbcr2rgb
 
 ##-
@@ -735,99 +750,17 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return obj.tolist()
 
         return super().default(obj)
+
+
 ##
 
-##-
-# def wsi2zarr(
-#         wsi_path: str|Path|PathLike,
-#         dst_path: str|Path|PathLike,
-#         crop: Optional[Tuple[int,int,int,int]|bool],
-#         band_size: Optional[int]=1528,
-# ) -> None:
-#     """
-#     Converts a WSI file to pyramidal ZARR format.
-#
-#     :param wsi_path: source file path.
-#     :param dst_path: destination file path (normally a .zarr folder).
-#     :param crop: either bool to control auto-crop or (x0, y0, width, height) for the crop region
-#     :param band_size: band height for processed regions
-#     :return: None
-#     """
-#     wsi_path = Path(wsi_path)
-#     dst_path = Path(dst_path)
-#     if not dst_path.exists():
-#         dst_path.mkdir(parents=True, exist_ok=True)
-#
-#     wsi = WSI(wsi_path)
-#
-#     # initially, whole image
-#     x0, y0, width, height = (0, 0, wsi.info["width"], wsi.info["height"])
-#
-#     if isinstance(crop, bool):
-#         if crop and wsi.info['roi'] is not None:
-#             x0, y0, width, height = (wsi.info['roi']['x0'],
-#                                      wsi.info['roi']['y0'],
-#                                      wsi.info['roi']["width"],
-#                                      wsi.info['roi']["height"])
-#     else:
-#         if crop is not None:
-#             x0, y0, width, height = crop
-#             x0 = max(0, min(x0, wsi.info["width"]))
-#             y0 = max(0, min(y0, wsi.info["height"]))
-#             width = min(width, wsi.info["width"] - x0)
-#             height = min(height, wsi.info["height"] - y0)
-#
-#     levels = np.zeros((2, wsi.level_count), dtype=np.int64)
-#
-#     with (zarr.open_group(str(dst_path), mode='w') as root):
-#         for i in range(wsi.level_count):
-#             # copy levels from WSI, band by band...
-#             # -level i crop region:
-#             cx0 = int(floor(x0 / wsi.downsample_factor(i)))
-#             cy0 = int(floor(y0 / wsi.downsample_factor(i)))
-#             cw = int(floor(width / wsi.downsample_factor(i)))
-#             ch = int(floor(height / wsi.downsample_factor(i)))
-#             #print("ZARR writing crop: ", cx0, cy0, cw, ch, i)
-#
-#             im = pyvips.Image.new_from_file(str(wsi_path), level=i, autocrop=False)
-#             im = im.crop(cx0, cy0, cw, ch)
-#             im = im.flatten()
-#
-#             shape = (ch, cw, 3)  # YXC axes
-#             levels[:, i] = (cw, ch)
-#
-#             arr = root.zeros('/'+str(i), shape=shape, chunks=(4096, 4096, None), dtype="uint8")
-#             n_bands = ch // band_size
-#             incomplete_band = shape[0] % band_size
-#             for j in range(n_bands):  # by horizontal bands
-#                 buf = im.crop(0, j * band_size, cw, band_size).numpy()
-#                 arr[j * band_size : (j + 1) * band_size] = buf
-#                 # arr[j * band_size:(j + 1) * band_size, ...] = \
-#                 #     wsi.get_region_px(cx0, cy0+j*band_size, cw, band_size, as_type=np.uint8)
-#
-#             if incomplete_band > 0:
-#                 buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
-#                 arr[n_bands * band_size : n_bands * band_size + incomplete_band] = buf
-#                 # arr[n_bands * band_size: n_bands * band_size + incomplete_band, ...] = \
-#                 #     wsi.get_region_px(cx0, n_bands*band_size, cw, incomplete_band, as_type=np.uint8)
-#         root.attrs["max_level"] = wsi.level_count
-#         root.attrs["channel_names"] = ["R", "G", "B"]
-#         root.attrs["dimension_names"] = ["y", "x", "c"]
-#         root.attrs["mpp_x"] = wsi.info['mpp_x']
-#         root.attrs["mpp_y"] = wsi.info["mpp_y"]
-#         root.attrs["mag_step"] = int(wsi.info['magnification_step'])
-#         root.attrs["objective_power"] = wsi.info['objective_power']
-#         root.attrs["extent"] = levels.tolist()
-#
-#     return
-# ##
 
 ##-
 def wsi2hdf5(
-        wsi_path: str|Path|PathLike,
-        dst_path: str|Path|PathLike,
-        crop: Optional[Tuple[int,int,int,int]|bool],
-        band_size: Optional[int]=1528,
+        wsi_path: str | Path | PathLike,
+        dst_path: str | Path | PathLike,
+        crop: Optional[Tuple[int, int, int, int] | bool],
+        band_size: Optional[int] = 1528,
 ) -> None:
     """
     Converts a WSI file to pyramidal format stored in HDF5.
@@ -881,19 +814,19 @@ def wsi2hdf5(
             current_level = root.create_group(str(i))
             arr = current_level.create_dataset(
                 "data", shape=shape,
-                chunks=(min(512, ch), min(512, cw),3),
+                chunks=(min(512, ch), min(512, cw), 3),
                 dtype="uint8",
-                #compression="lzf"
+                # compression="lzf"
             )
             n_bands = ch // band_size
             incomplete_band = shape[0] % band_size
             for j in range(n_bands):  # by horizontal bands
                 buf = im.crop(0, j * band_size, cw, band_size).numpy()
-                arr[j * band_size : (j + 1) * band_size] = buf
+                arr[j * band_size: (j + 1) * band_size] = buf
 
             if incomplete_band > 0:
                 buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
-                arr[n_bands * band_size : n_bands * band_size + incomplete_band] = buf
+                arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
         root.attrs["max_level"] = wsi.level_count
         root.attrs["channel_names"] = ["R", "G", "B"]
         root.attrs["dimension_names"] = ["y", "x", "c"]
@@ -904,4 +837,144 @@ def wsi2hdf5(
         root.attrs["extent"] = levels.tolist()
 
     return
+
+
+##
+
+##-
+def build_omexml(
+        image_name: str = "noname",
+        image_description: str = "no description",
+        image_shape: ImageShape = (1, 1),
+        image_type: str = "RGB",  # RGB, BGR, gray
+        magnif: float = 1.0,
+        pixel_type: str = "uint8",
+        mpp: float = 1.0,
+) -> str:
+    if image_type == "RGB" or image_type == "BGR":
+        n_channels = 3
+    else:
+        n_channels = 1
+
+    omexml = \
+    f"""
+    <OME
+	xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd" UUID="urn:uuid:29a39710-33c5-4e40-8faf-c9d146496bd2">
+    <Instrument ID="Instrument:0">
+        <Microscope Manufacturer="virtual" Model="v1"/>
+        <Objective ID="Objective:0:0" Manufacturer="virtual" Model="v1" NominalMagnification="{magnif}"/>
+    </Instrument>
+	<Image ID="Image:0" Name="{image_name}">
+		<Description>{image_description}</Description>
+		<InstrumentRef ID="Instrument:0"/>
+		<ObjectiveSettings ID="Objective:0:0"/>
+		<Pixels ID="Pixels:0" 
+		    DimensionOrder="XYCZT" 
+		    Type="{pixel_type}" 
+		    SignificantBits="8" 
+		    Interleaved="true" 
+            SizeX="{image_shape.width}"
+            SizeY="{image_shape.height}"
+            SizeZ="1" 
+            SizeC="{n_channels}" 
+            SizeT="1" 
+            PhysicalSizeX="{mpp}" 
+            PhysicalSizeXUnit="µm" 
+            PhysicalSizeY="{mpp}" 
+            PhysicalSizeYUnit="µm">
+			<Channel ID="Channel:0:0" SamplesPerPixel="{n_channels}">
+				<LightPath/>
+			</Channel>
+			<TiffData IFD="0" PlaneCount="1">
+			</TiffData>
+			<Plane TheZ="0" TheT="0" TheC="0" PositionX="0.0" PositionXUnit="nm" PositionY="0.0" PositionYUnit="nm" PositionZ="0.0" PositionZUnit="nm"/>
+		</Pixels>
+	</Image>
+    </OME>
+    """
+    return omexml
+
+##
+
+##-
+def mri2tiff(mri: MRI, out_path: str | Path | PathLike, overwrite: bool = True,
+             tile_shape: tuple[int, int] = (1024, 1024)):
+    """
+    Save a multiresoultion image in a pyramidal BigTiff file with the meta information
+    properly set to follow OME TIFF specification.
+
+    Args:
+        mri: an MRI object.
+        out_path: path and filename (including the .tiff suffix)
+        overwrite: if True, overwrite existing file
+        tile_shape: a tuple (width, height) of the output tile shape
+    Returns:
+        None
+    """
+    out_path = Path(out_path)
+    if out_path.exists() and not overwrite:
+        # refuse
+        raise FileExistsError(out_path)
+    if out_path.suffix != ".tiff":
+        raise RuntimeError(f"Output path {out_path} is not a TIFF file")
+    test_img = mri.get_plane(mri.nlevels - 1)
+    n_channels = test_img.shape[-1]
+    data_type = str(test_img.dtype)
+    if data_type not in ["uint8", "uint16"]:
+        raise TypeError(f"Data type {data_type} is not supported")
+    im_shape = mri.shape(0)
+    mpp = mri.get_native_resolution
+
+    # meta = f"""<?xml version="1.0" encoding="UTF-8"?>
+    # <OME xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
+    #     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    #     xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd">
+    #     <Instrument ID="Instrument:0">
+    #         <Microscope Manufacturer="virtual" Model="v1"/>
+    #         <Objective Manufacturer="virtual" Model="v1" ID="Objective:0" NominalMagnification="{mri.get_native_magnification}"/>
+    #     </Instrument>
+    #     <Image ID="Image:0" Name="{out_path.stem}">
+    #         <InstrumentRef ID="Instrument:0"/>
+    #         <!-- Minimum required fields about image dimensions -->
+    #         <Pixels DimensionOrder="XYCZT"
+    #                 ID="Pixels:0"
+    #                 SizeC="{n_channels}"
+    #                 SizeT="1"
+    #                 SizeX="{im_shape.width}"
+    #                 SizeY="{im_shape.height}"
+    #                 SizeZ="1"
+    #                 Type="{data_type}"
+    #                 PhysicalSizeX="{mpp}"
+    #                 PhysicalSizeXUnit="µm"
+    #                 PhysicalSizeY="{mpp}"
+    #                 PhysicalSizeYUnit="µm">
+    #         </Pixels>
+    #     </Image>
+    # </OME>"""
+
+    meta = build_omexml(out_path.stem, image_shape=im_shape, image_type="RGB",
+                        magnif=mri.get_native_magnification, pixel_type=data_type,
+                        mpp=mpp)
+
+    if data_type == "uint8":
+        out_img = pyvips.Image.new_from_array(mri.get_plane(0), interpretation="rgb")
+    else:
+        out_img = pyvips.Image.new_from_array(mri.get_plane(0), interpretation="rgb16")
+
+#    out_img.set_type(pyvips.GValue.gint_type, "page-height", im_shape.height)
+    out_img.set_type(pyvips.GValue.gstr_type, "image-description", meta)
+
+    out_img.write_to_file(
+        out_path,
+        compression='lzw',
+        tile=True,
+        tile_width=tile_shape[0],
+        tile_height=tile_shape[1],
+        pyramid=True,
+        subifd=True,
+        bigtiff=True,
+        miniswhite=False,
+        xres=10000.0 / mpp, yres=10000.0 / mpp, resunit="cm",
+    )
 ##
