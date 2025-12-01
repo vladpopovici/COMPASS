@@ -851,6 +851,21 @@ def build_omexml(
         pixel_type: str = "uint8",
         mpp: float = 1.0,
 ) -> str:
+    """
+    Builds a reduced OME XML file.
+
+    Args:
+        image_name: (optional) image name
+        image_description: (optional) image description
+        image_shape: image shape (width, height)
+        image_type: image type RGB or BGR or gray
+        magnif: objective native magnification
+        pixel_type: pixel data type (uint8 or uint16)
+        mpp: resolution in microns per pixel
+
+    Returns:
+
+    """
     if image_type == "RGB" or image_type == "BGR":
         n_channels = 3
     else:
@@ -858,22 +873,23 @@ def build_omexml(
 
     omexml = \
     f"""
+    <?xml version="1.0" encoding="UTF-8"?>
     <OME
-	xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd" UUID="urn:uuid:29a39710-33c5-4e40-8faf-c9d146496bd2">
+    xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd" UUID="urn:uuid:29a39710-33c5-4e40-8faf-c9d146496bd2">
     <Instrument ID="Instrument:0">
         <Microscope Manufacturer="virtual" Model="v1"/>
         <Objective ID="Objective:0:0" Manufacturer="virtual" Model="v1" NominalMagnification="{magnif}"/>
     </Instrument>
-	<Image ID="Image:0" Name="{image_name}">
-		<Description>{image_description}</Description>
-		<InstrumentRef ID="Instrument:0"/>
-		<ObjectiveSettings ID="Objective:0:0"/>
-		<Pixels ID="Pixels:0" 
-		    DimensionOrder="XYCZT" 
-		    Type="{pixel_type}" 
-		    SignificantBits="8" 
-		    Interleaved="true" 
+    <Image ID="Image:0" Name="{image_name}">
+        <Description>{image_description}</Description>
+        <InstrumentRef ID="Instrument:0"/>
+        <ObjectiveSettings ID="Objective:0:0"/>
+        <Pixels ID="Pixels:0" 
+            DimensionOrder="XYCZT" 
+            Type="{pixel_type}" 
+            SignificantBits="8" 
+            Interleaved="true" 
             SizeX="{image_shape.width}"
             SizeY="{image_shape.height}"
             SizeZ="1" 
@@ -883,25 +899,26 @@ def build_omexml(
             PhysicalSizeXUnit="µm" 
             PhysicalSizeY="{mpp}" 
             PhysicalSizeYUnit="µm">
-			<Channel ID="Channel:0:0" SamplesPerPixel="{n_channels}">
-				<LightPath/>
-			</Channel>
-			<TiffData IFD="0" PlaneCount="1">
-			</TiffData>
-			<Plane TheZ="0" TheT="0" TheC="0" PositionX="0.0" PositionXUnit="nm" PositionY="0.0" PositionYUnit="nm" PositionZ="0.0" PositionZUnit="nm"/>
-		</Pixels>
-	</Image>
+        </Pixels>
+        <Channel ID="Channel:0:0" SamplesPerPixel="{n_channels}">
+            <LightPath/>
+        </Channel>
+        <TiffData IFD="0" PlaneCount="1">
+        </TiffData>
+        <Plane TheZ="0" TheT="0" TheC="0" PositionX="0.0" PositionXUnit="nm" PositionY="0.0" PositionYUnit="nm" PositionZ="0.0" PositionZUnit="nm"/>            
+    </Image>
     </OME>
     """
-    return omexml
 
+    return omexml
 ##
 
 ##-
 def mri2tiff(mri: MRI, out_path: str | Path | PathLike, overwrite: bool = True,
-             tile_shape: tuple[int, int] = (1024, 1024)):
+             tile_shape: tuple[int, int] = (1024, 1024),
+             minimal_omexml: bool = True) -> str:
     """
-    Save a multiresoultion image in a pyramidal BigTiff file with the meta information
+    Save a multi-resolution image in a pyramidal BigTiff file with the meta information
     properly set to follow OME TIFF specification.
 
     Args:
@@ -909,8 +926,12 @@ def mri2tiff(mri: MRI, out_path: str | Path | PathLike, overwrite: bool = True,
         out_path: path and filename (including the .tiff suffix)
         overwrite: if True, overwrite existing file
         tile_shape: a tuple (width, height) of the output tile shape
+        minimal_omexml: (optional) minimal OME xml version, best supported by various applications.
     Returns:
         None
+
+    Notes:
+        For compatibility with MIKAIA, make sure to use minimal_omexml=True.
     """
     out_path = Path(out_path)
     if out_path.exists() and not overwrite:
@@ -926,36 +947,37 @@ def mri2tiff(mri: MRI, out_path: str | Path | PathLike, overwrite: bool = True,
     im_shape = mri.shape(0)
     mpp = mri.get_native_resolution
 
-    # meta = f"""<?xml version="1.0" encoding="UTF-8"?>
-    # <OME xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
-    #     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    #     xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd">
-    #     <Instrument ID="Instrument:0">
-    #         <Microscope Manufacturer="virtual" Model="v1"/>
-    #         <Objective Manufacturer="virtual" Model="v1" ID="Objective:0" NominalMagnification="{mri.get_native_magnification}"/>
-    #     </Instrument>
-    #     <Image ID="Image:0" Name="{out_path.stem}">
-    #         <InstrumentRef ID="Instrument:0"/>
-    #         <!-- Minimum required fields about image dimensions -->
-    #         <Pixels DimensionOrder="XYCZT"
-    #                 ID="Pixels:0"
-    #                 SizeC="{n_channels}"
-    #                 SizeT="1"
-    #                 SizeX="{im_shape.width}"
-    #                 SizeY="{im_shape.height}"
-    #                 SizeZ="1"
-    #                 Type="{data_type}"
-    #                 PhysicalSizeX="{mpp}"
-    #                 PhysicalSizeXUnit="µm"
-    #                 PhysicalSizeY="{mpp}"
-    #                 PhysicalSizeYUnit="µm">
-    #         </Pixels>
-    #     </Image>
-    # </OME>"""
+    meta = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <OME xmlns="http://www.openmicroscopy.org/Schemas/OME/2016-06"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.openmicroscopy.org/Schemas/OME/2016-06 http://www.openmicroscopy.org/Schemas/OME/2016-06/ome.xsd">
+        <Instrument ID="Instrument:0">
+            <Microscope Manufacturer="virtual" Model="v1"/>
+            <Objective Manufacturer="virtual" Model="v1" ID="Objective:0" NominalMagnification="{mri.get_native_magnification}"/>
+        </Instrument>
+        <Image ID="Image:0" Name="{out_path.stem}">
+            <InstrumentRef ID="Instrument:0"/>
+            <!-- Minimum required fields about image dimensions -->
+            <Pixels DimensionOrder="XYCZT"
+                    ID="Pixels:0"
+                    SizeC="{n_channels}"
+                    SizeT="1"
+                    SizeX="{im_shape.width}"
+                    SizeY="{im_shape.height}"
+                    SizeZ="1"
+                    Type="{data_type}"
+                    PhysicalSizeX="{mpp}"
+                    PhysicalSizeXUnit="µm"
+                    PhysicalSizeY="{mpp}"
+                    PhysicalSizeYUnit="µm">
+            </Pixels>
+        </Image>
+    </OME>"""
 
-    meta = build_omexml(out_path.stem, image_shape=im_shape, image_type="RGB",
-                        magnif=mri.get_native_magnification, pixel_type=data_type,
-                        mpp=mpp)
+    if not minimal_omexml:
+        meta = build_omexml(out_path.stem, image_shape=im_shape, image_type="RGB",
+                            magnif=mri.get_native_magnification, pixel_type=data_type,
+                            mpp=mpp)
 
     if data_type == "uint8":
         out_img = pyvips.Image.new_from_array(mri.get_plane(0), interpretation="rgb")
@@ -977,4 +999,6 @@ def mri2tiff(mri: MRI, out_path: str | Path | PathLike, overwrite: bool = True,
         miniswhite=False,
         xres=10000.0 / mpp, yres=10000.0 / mpp, resunit="cm",
     )
+
+    return meta
 ##
