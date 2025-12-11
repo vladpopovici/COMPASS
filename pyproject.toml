@@ -8,15 +8,20 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "configargparse>=1.7",
-    "dask[complete]>=2024.0.0",
+    "bottleneck>=1.6.0",
+    "dask-image>=2025.11.0",
+    "dask[array,complete,dataframe]>=2024.0.0",
     "fastapi[standard]>=0.115.12",
     "geojson>=3.1.0",
+    "h5netcdf>=1.7.3",
     "h5py>=3.13.0",
+    "hdf5plugin>=6.0.0",
     "joblib>=1.4.2",
     "mahotas>=1.4.18",
     "mkdocs>=1.6.1",
     "mkl>=2025.0.1",
+    "netcdf4>=1.7.3",
+    "numbagg>=0.9.3",
     "opencv-python>=4.10.0.84",
     "openslide-bin>=4.0.0.6",
     "openslide-python>=1.4.1",
@@ -29,7 +34,9 @@ dependencies = [
     "scipy>=1.14.0",
     "shapely>=2.0.6",
     "simplejson>=3.19.3",
+    "tqdm>=4.67.1",
     "wsitk-annot",
+    "xarray>=2025.12.0",
     "xmltodict>=0.14.2",
     "zarr>=2.18.3",
 ]
