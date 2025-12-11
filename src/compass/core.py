@@ -166,41 +166,41 @@ def wsi2hdf5(
 
 
     level = 0
-    # with h5py.File(str(dst_path), 'w') as root:
-    #     im = pyvips.Image.new_from_file(str(wsi_path), level=level, autocrop=False)
-    #     cx0, cy0, cw, ch = levels[level]['x0'], levels[level]['y0'], levels[level]['w'], levels[level]['h']
-    #     im = im.crop(cx0, cy0, cw, ch)
-    #     im = im.flatten()
-    #
-    #     shape = (ch, cw, 3)  # YXC axes
-    #     current_level = root.create_group(f"scale{level}")
-    #     arr = current_level.create_dataset(
-    #         "image",
-    #         shape=shape,
-    #         chunks=(min(8192, ch), min(8192, cw), 3),
-    #         dtype="uint8",
-    #         compression=compression,
-    #     )
-    #
-    #     n_bands = ch // band_size
-    #     incomplete_band = shape[0] % band_size
-    #     for j in range(n_bands):  # by horizontal bands
-    #         buf = im.crop(0, j * band_size, cw, band_size).numpy()
-    #         arr[j * band_size: (j + 1) * band_size] = buf
-    #
-    #     if incomplete_band > 0:
-    #         buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
-    #         arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
-    #
-    #     # array-specific metadata
-    #     arr.attrs["channel_names"] = ["R", "G", "B"]
-    #     arr.attrs["dimension_names"] = ["y", "x", "c"]
-    #
-    #     # scale-specific metadata
-    #     current_level.attrs["mpp_x"] = downscale_factor**level * wsi.info['mpp_x']
-    #     current_level.attrs["mpp_y"] = downscale_factor**level * wsi.info['mpp_y']
-    #     current_level.attrs["objective_power"] = wsi.info['objective_power'] / (downscale_factor**level)
-    #     current_level.attrs["scale_factor"] = downscale_factor**level
+    with h5py.File(str(dst_path), 'w') as root:
+        im = pyvips.Image.new_from_file(str(wsi_path), level=level, autocrop=False)
+        cx0, cy0, cw, ch = levels[level]['x0'], levels[level]['y0'], levels[level]['w'], levels[level]['h']
+        im = im.crop(cx0, cy0, cw, ch)
+        im = im.flatten()
+
+        shape = (ch, cw, 3)  # YXC axes
+        current_level = root.create_group(f"scale{level}")
+        arr = current_level.create_dataset(
+            "image",
+            shape=shape,
+            chunks=(min(8192, ch), min(8192, cw), 3),
+            dtype="uint8",
+            compression=compression,
+        )
+
+        n_bands = ch // band_size
+        incomplete_band = shape[0] % band_size
+        for j in range(n_bands):  # by horizontal bands
+            buf = im.crop(0, j * band_size, cw, band_size).numpy()
+            arr[j * band_size: (j + 1) * band_size] = buf
+
+        if incomplete_band > 0:
+            buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
+            arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
+
+        # array-specific metadata
+        arr.attrs["channel_names"] = ["R", "G", "B"]
+        arr.attrs["dimension_names"] = ["y", "x", "c"]
+
+        # scale-specific metadata
+        current_level.attrs["mpp_x"] = downscale_factor**level * wsi.info['mpp_x']
+        current_level.attrs["mpp_y"] = downscale_factor**level * wsi.info['mpp_y']
+        current_level.attrs["objective_power"] = wsi.info['objective_power'] / (downscale_factor**level)
+        current_level.attrs["scale_factor"] = downscale_factor**level
 
     # Use dask-image to generate the levels of the pyramid
     with h5py.File(str(dst_path), 'a') as root:
