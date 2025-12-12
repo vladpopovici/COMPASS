@@ -9,7 +9,6 @@ __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
 from os import PathLike
 from math import floor
-from typing import Optional, Tuple
 from pathlib import Path
 import pyvips
 import h5py
@@ -19,7 +18,7 @@ import netCDF4 as cdf
 import dask.array as da
 import tempfile
 import tqdm
-from dask_image.ndfilters import gaussian_filter
+#from dask_image.ndfilters import gaussian_filter
 
 """
 COMPASS.CORE: core classes and functions.
@@ -164,14 +163,28 @@ def wsi2hdf5(
     # This allows a different pyramid structure than the one stored in WSI and
     # gives the control on how lower resolutions as generated.
 
-
     level = 0
     with h5py.File(str(dst_path), 'w') as root:
+        def im_to_arr(im: pyvips.Image, arr: h5py.Dataset):
+            n_bands = ch // band_size
+            incomplete_band = shape[0] % band_size
+            for j in range(n_bands):  # by horizontal bands
+                buf = im.crop(0, j * band_size, cw, band_size).numpy()
+                arr[j * band_size: (j + 1) * band_size] = buf
+
+            if incomplete_band > 0:
+                buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
+                arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
+
+        # level 0: copy
+        level = 0
+
         im = pyvips.Image.new_from_file(str(wsi_path), level=level, autocrop=False)
         cx0, cy0, cw, ch = levels[level]['x0'], levels[level]['y0'], levels[level]['w'], levels[level]['h']
         im = im.crop(cx0, cy0, cw, ch)
         im = im.flatten()
 
+        print("Copying level 0...")
         shape = (ch, cw, 3)  # YXC axes
         current_level = root.create_group(f"scale{level}")
         arr = current_level.create_dataset(
@@ -181,16 +194,18 @@ def wsi2hdf5(
             dtype="uint8",
             compression=compression,
         )
+        print("...OK")
+        # n_bands = ch // band_size
+        # incomplete_band = shape[0] % band_size
+        # for j in range(n_bands):  # by horizontal bands
+        #     buf = im.crop(0, j * band_size, cw, band_size).numpy()
+        #     arr[j * band_size: (j + 1) * band_size] = buf
+        #
+        # if incomplete_band > 0:
+        #     buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
+        #     arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
 
-        n_bands = ch // band_size
-        incomplete_band = shape[0] % band_size
-        for j in range(n_bands):  # by horizontal bands
-            buf = im.crop(0, j * band_size, cw, band_size).numpy()
-            arr[j * band_size: (j + 1) * band_size] = buf
-
-        if incomplete_band > 0:
-            buf = im.crop(0, n_bands * band_size, cw, incomplete_band).numpy()
-            arr[n_bands * band_size: n_bands * band_size + incomplete_band] = buf
+        im_to_arr(im, arr)
 
         # array-specific metadata
         arr.attrs["channel_names"] = ["R", "G", "B"]
@@ -202,27 +217,24 @@ def wsi2hdf5(
         current_level.attrs["objective_power"] = wsi.info['objective_power'] / (downscale_factor**level)
         current_level.attrs["scale_factor"] = downscale_factor**level
 
-    # Use dask-image to generate the levels of the pyramid
-    with h5py.File(str(dst_path), 'a') as root:
-        lv0 = da.array(root["/scale0/image"])
         for level in range(1, nlevels):
             cw, ch = levels[level]['w'], levels[level]['h']  # current extent
             sf = downscale_factor ** level                   # scale factor
-            sigma = sf / 2
-            lvk_blurred = gaussian_filter(lv0, sigma=[sigma, sigma, 0])
-            lvk_blurred = lvk_blurred[:ch, :cw, :]
-            lvk = lvk_blurred[::sf, ::sf, :].astype(lv0.dtype)  # keep type
+            im_scaled = im.resize(sf, pyvips.enums.Kernel.CUBIC)
 
             # write to file
+            shape = (ch, cw, 3)  # YXC axes
             current_level = root.create_group(f"scale{level}")
             arr = current_level.create_dataset(
                 "image",
-                data=lvk,
-            #    shape=(ch, cw, 3),
+                shape=shape,
                 chunks=(min(8192, ch), min(8192, cw), 3),
-            #    dtype="uint8",
+                dtype="uint8",
                 compression=compression,
             )
+            print(f"Generating level {level}...")
+            im_to_arr(im, arr)
+            print("...OK")
             # array-specific metadata
             arr.attrs["channel_names"] = ["R", "G", "B"]
             arr.attrs["dimension_names"] = ["y", "x", "c"]
@@ -232,6 +244,37 @@ def wsi2hdf5(
             current_level.attrs["mpp_y"] = sf * wsi.info['mpp_y']
             current_level.attrs["objective_power"] = wsi.info['objective_power'] / sf
             current_level.attrs["scale_factor"] = sf
+
+        # # Use dask-image to generate the levels of the pyramid
+    # with h5py.File(str(dst_path), 'a') as root:
+    #     lv0 = da.array(root["/scale0/image"])
+    #     for level in range(1, nlevels):
+    #         cw, ch = levels[level]['w'], levels[level]['h']  # current extent
+    #         sf = downscale_factor ** level                   # scale factor
+    #         sigma = sf / 2
+    #         lvk_blurred = gaussian_filter(lv0, sigma=[sigma, sigma, 0])
+    #         lvk_blurred = lvk_blurred[:ch, :cw, :]
+    #         lvk = lvk_blurred[::sf, ::sf, :].astype(lv0.dtype)  # keep type
+    #
+    #         # write to file
+    #         current_level = root.create_group(f"scale{level}")
+    #         arr = current_level.create_dataset(
+    #             "image",
+    #             data=lvk,
+    #         #    shape=(ch, cw, 3),
+    #             chunks=(min(8192, ch), min(8192, cw), 3),
+    #         #    dtype="uint8",
+    #             compression=compression,
+    #         )
+    #         # array-specific metadata
+    #         arr.attrs["channel_names"] = ["R", "G", "B"]
+    #         arr.attrs["dimension_names"] = ["y", "x", "c"]
+    #
+    #         # scale-specific metadata
+    #         current_level.attrs["mpp_x"] = sf * wsi.info['mpp_x']
+    #         current_level.attrs["mpp_y"] = sf * wsi.info['mpp_y']
+    #         current_level.attrs["objective_power"] = wsi.info['objective_power'] / sf
+    #         current_level.attrs["scale_factor"] = sf
 
         root.attrs["max_level"] = nlevels
         root.attrs["base_mpp_x"] = wsi.info['mpp_x']
