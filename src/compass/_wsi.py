@@ -14,9 +14,9 @@ import numpy as np
 from os import PathLike
 from math import floor
 
-from _pyr import PyramidalImage
-from _magnif import Magnification
-from _misc import ImageShape, Px
+from ._pyr import PyramidalImage
+from ._magnif import Magnification
+from ._misc import ImageShape, Px
 
 
 #####

@@ -17,24 +17,24 @@ from abc import ABC, abstractmethod
 from os import PathLike
 from math import floor
 
-from _misc import ImageShape, Px
-from _magnif import Magnification
-from mask import add_region, apply_mask
+from ._misc import ImageShape, Px
+from ._magnif import Magnification
+from .mask import add_region, apply_mask
 
 #####
 class PyramidalImage(ABC):
-    """Abstract base class for a pyramidal image. It provide the basic API
-    for storing information about and interacting with the image."""
+    """Abstract base class for a pyramidal image. It provides the basic API
+    for storing information about the geometry of the image and for
+    interacting with the image."""
 
-    def __init__(self, path: pathlib.Path | str | PathLike,
+    def __init__(self,
                  base_dim: ImageShape = ImageShape(width=0, height=0),
                  magnif: Magnification = None):
-        """Construct an abstract pyramidal image: basic knowledge of storage
-        location, image shape, and magnification characteristics coudl be
+        """Construct an abstract pyramidal image: no data yet, just
+        the image shape, and magnification characteristics that must be
         provided as arguments.
 
         """
-        self._path: pathlib.Path = pathlib.Path(path)
         self._mag: Magnification = magnif
         self._pyramid_levels: np.ndarray | None = None
         self._base_dim: ImageShape = base_dim
@@ -56,19 +56,15 @@ class PyramidalImage(ABC):
         pass
 
     @property
-    def path(self) -> pathlib.Path:
-        return self._path
-
-    @property
     def nlevels(self) -> int:
         return self._nlevels
 
     @property
-    def get_native_magnification(self) -> float:
+    def native_magnification(self) -> float:
         return self._mag.base_magnif
 
     @property
-    def get_native_resolution(self) -> float:
+    def native_resolution(self) -> float:
         return self._mag.base_mpp
 
     def get_level_for_magnification(self, mag: float) -> int:
