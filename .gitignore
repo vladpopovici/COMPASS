@@ -4,4 +4,4 @@
 __pycache__
 *.v
 .ipynb_checkpoints*
-src/compass/__pycache__/*
+src/compass/__pycache__/**

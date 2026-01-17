@@ -33,6 +33,7 @@ class WSI(PyramidalImage):
     """
 
     def __init__(self, path: str | pathlib.Path | PathLike):
+        self._path = path
         self._slide = slide_src = osl.OpenSlide(path)
         # keep also full meta info:
         self._original_meta = slide_meta = slide_src.properties
@@ -59,12 +60,16 @@ class WSI(PyramidalImage):
         if osl.PROPERTY_NAME_BACKGROUND_COLOR in slide_meta:
             self._info['background'] = 0xFF if slide_meta[osl.PROPERTY_NAME_BACKGROUND_COLOR] == 'FFFFFF' else 0
 
-        super().__init__(path, ImageShape(width=slide_src.dimensions[0], height=slide_src.dimensions[1]),
-                         Magnification(self._info['objective_power'],
-                                       mpp=0.5 * (self._info['mpp_x'] + self._info['mpp_y']),
-                                       level=0,
-                                       n_levels=self._info['n_levels'],
-                                       magnif_step=float(self._info['magnification_step'])))
+        super().__init__(
+            ImageShape(width=slide_src.dimensions[0], height=slide_src.dimensions[1]),
+            Magnification(
+                self._info['objective_power'],
+                mpp=0.5 * (self._info['mpp_x'] + self._info['mpp_y']),
+                level=0,
+                n_levels=self._info['n_levels'],
+                magnif_step=float(self._info['magnification_step'])
+            )
+        )
 
     @property
     def info(self) -> dict:

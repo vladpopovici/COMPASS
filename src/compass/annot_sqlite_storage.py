@@ -465,18 +465,25 @@ def load_annotation(path: str | Path):
         h = int(_meta_get(conn, "image_height", "0") or "0")
         mpp = float(_meta_get(conn, "mpp", "1.0") or "1.0")
 
+        # Create and initialize a basic Annotation object. This ensures some assumptions are met:
+        # - there is a default "base" layer (ID:0)
+        # - there is a default "no_group" group (ID:0) in the base layer
         ann = Annotation(name=name, image_shape=ImageShape(width=w, height=h), mpp=mpp)
 
         # layers
         layers = conn.execute("SELECT layer_id, name FROM layers ORDER BY layer_id").fetchall()
-        ann._id_layer = {int(lid): str(nm) for lid, nm in layers}
+        # add layers
+        for lid, nm in layers:
+            ann._id_layer[int(lid)] = str(nm)
 
         # groups
         groups = conn.execute("SELECT group_id, name FROM groups ORDER BY group_id").fetchall()
-        ann._id_group = {int(gid): str(nm) for gid, nm in groups}
+        # add groups
+        for gid, nm in groups:
+            ann._id_group[int(gid)] = str(nm)
 
-        # _layers: derive from groups table
-        ann._layers = {}
+
+        # _layers: derive from groups table (there is always a default one!)
         for lid, gid in conn.execute("SELECT layer_id, group_id FROM groups").fetchall():
             ann._layers.setdefault(int(lid), set()).add(int(gid))
 
@@ -508,7 +515,6 @@ def load_annotation(path: str | Path):
             obj_by_id[int(oid)]._data = _unpack_sparse(conn, bytes(ids_blob), bytes(vals_blob))
 
         # memberships -> ann._annots
-        ann._annots = {}
         for gid, oid in conn.execute(
             "SELECT group_id, object_id FROM object_groups ORDER BY group_id, object_id"
         ).fetchall():

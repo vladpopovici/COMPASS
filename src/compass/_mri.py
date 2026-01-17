@@ -172,7 +172,7 @@ class MRI(PyramidalImage):
 
         img = da.from_array(
             self.__storage[f'/scale{level}/image'],
-            schunks=(min(8192, self.heights[level]), min(8192, self.widths[level]), 3),
+            chunks=(min(8192, self.heights[level]), min(8192, self.widths[level]), 3),
         )
 
         return img

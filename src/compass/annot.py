@@ -26,6 +26,7 @@ __all__ = ["AnnotationObject", "Point", "Polygon", "PointSet", "Annotation", "Ci
 import collections
 import io
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
 
 import h5py
@@ -593,18 +594,18 @@ class Annotation(object):
         }  # all layers, each with its unique groups
         self._annots: dict[
             int, list[AnnotationObject]
-        ] = {}  # all annots <group_id>:<list of annotation objects>
+        ] = {0: []}  # all annots <group_id>:<list of annotation objects>, no obj in "no_group"
 
         return
 
-    def get_layer_names(self, sorted: bool=False) -> list[str]:
+    def get_layer_names(self, sorted_list: bool=False) -> list[str]:
         """
         Return the list of layer names, eventually sorted.
 
-        :param sorted: (bool) should the list be sorted?
+        :param sorted_list: (bool) should the list be sorted?
         """
         res = list(self._id_layer.values())
-        if sorted:
+        if sorted_list:
             res.sort()
         return res
 
@@ -635,19 +636,11 @@ class Annotation(object):
         ]  # all group ids
 
         # append group(s) to the set of groups of the layer l_id
-        if l_id not in self._layers:
-            # newly created layer, initialize the set of groups
-            self._layers[l_id] = set(g_id)
-        else:  # just add the groups to the set
-            for g in g_id:
-                self._layers[l_id].add(g)
+        self._layers.setdefault(l_id, set()).update(g_id)
 
         # add the object to all the groups:
         for g in g_id:
-            if g in self._annots:
-                self._annots[g].append(a)
-            else:
-                self._annots[g] = [a]
+            self._annots.setdefault(g, []).append(a)
 
         return
 
@@ -679,21 +672,63 @@ class Annotation(object):
         ]  # all group ids
 
         # append group(s) to the set of groups of the layer l_id
-        if l_id not in self._layers:
-            # newly created layer, initialize the set of groups
-            self._layers[l_id] = set(g_id)
-        else:  # just add the groups to the set
-            for g in g_id:
-                self._layers[l_id].add(g)
+        self._layers.setdefault(l_id, set()).update(g_id)
 
         # add the objects to all the groups:
         for g in g_id:
-            if g in self._annots:
-                self._annots[g].extend(a_list)
-            else:
-                self._annots[g] = a_list
+            self._annots.setdefault(g, []).extend(a_list)
 
         return
+
+    def scan_objects(
+            self,
+            layer: str = "base",
+            group: str|None = "no_group",
+            filter_object_type: int|str|None = None
+    ) -> Iterable[AnnotationObject]:
+        """
+        Browse all objects in a layer/group from an annotation collection. Optionally,
+        returns only the annotation objects of a specific type.
+
+        :param layer: (str) name of the layer
+        :param group: (str) name of the group; if None, all groups are scanned
+        :param filter_object_type: (int|str|list|None) the type of objects to return; if None, all objects
+            are scanned
+
+        Returns:
+        an iterable of AnnotationObject
+        """
+        layer_id = self.__get_layer_id(layer, create_if_needed=False)
+        if layer_id == -1:
+            raise RuntimeError("Unknown layer")
+
+        if filter_object_type is not None:
+            if isinstance(filter_object_type, int):
+                filter_object_type = ANNOT_CODE_TYPE[filter_object_type] # get the name of the obj type
+
+        group_ids = []
+        groups = list(self._layers[layer_id])
+        if group is None:
+            if len(groups) > 0:
+                group_ids = [self.__get_group_id(gr, create_if_needed=False) for gr in groups]
+        else:
+            group_id = self.__get_group_id(group, create_if_needed=False)
+            if group_id not in groups:
+                raise RuntimeError(f"Unknown group in layer {layer}")
+            group_ids = [group_id]
+
+        if len(group_ids) == 0:
+            raise StopIteration
+
+        if filter_object_type is not None:  # and is already str
+            for gr in group_ids:
+                for obj in self._annots[gr]:
+                    if obj._annotation_type == filter_object_type:
+                        yield obj
+        else:  # all obj types
+            for gr in group_ids:
+                for obj in self._annots[gr]:
+                    yield obj
 
     def get_base_image_shape(self) -> ImageShape:
         """Return the basic space for the annotations."""
