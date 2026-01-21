@@ -45,7 +45,8 @@ class WSI(PyramidalImage):
             'mpp_x': float(slide_meta[osl.PROPERTY_NAME_MPP_X]),  # microns/pixel
             'mpp_y': float(slide_meta[osl.PROPERTY_NAME_MPP_Y]),
             'n_levels': slide_src.level_count,  # no. of levels in pyramid
-            'magnification_step': slide_src.level_downsamples[1] / slide_src.level_downsamples[0],
+            'magnification_step': \
+                slide_src.level_downsamples[1] / slide_src.level_downsamples[0] if slide_src.level_count > 1 else 1.0,
             'roi': dict(),
             'background': 0xFF
         }
@@ -120,8 +121,8 @@ class WSI(PyramidalImage):
         if img.shape[2] == 4:  # has alpha channel, usually used for masking
             # fill with background
             mask = img[..., -1].squeeze()
-            img[mask == 0, 0:4] = self.info['background']
-            img = img[..., :-1]
+            img[mask == 0, 0:3] = self.info['background']
+            img = img[..., 0:3]
 
         return img.astype(as_type)
 

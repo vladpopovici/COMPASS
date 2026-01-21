@@ -143,7 +143,8 @@ def wsi2hdf5(
         for level in range(1, nlevels):
             logging.info(f"WSI2HDF5: Generating level {level}...")
             im = pyvips.Image.new_from_file(str(tmp_path / f"level{level-1}.v"))
-            im_scaled = im.reduce(downscale_factor, downscale_factor)  # downscale previous level
+            # im_scaled = im.reduce(downscale_factor, downscale_factor)  # downscale previous level
+            im_scaled = im.resize(1.0 / downscale_factor, gap=2.0)  # downscale previous level
             im_scaled.write_to_file(str(tmp_path / f"level{level}.v"))
             logging.info("WSI2HDF5: ...OK")
 

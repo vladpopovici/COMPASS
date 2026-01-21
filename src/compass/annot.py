@@ -65,13 +65,13 @@ class AnnotationObject(ABC):
         self,
         coords: list[any] | tuple[any, ...] | np.ndarray,
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
     ):
         # main geometrical object describing the annotation:
         self._geom = shg.Point()  # some empty geometry
         self._name: str = name
         self._annotation_type: str = None
-        self._data: dict[str, np.float32] = data
+        self._data: dict[str, np.float32] = data if not None else {}
         self._id: int = -1  # to be used internally
 
         return
@@ -234,7 +234,7 @@ class Point(AnnotationObject):
         self,
         coords: list[any] | tuple[any, ...] | np.ndarray = (0.0, 0.0),
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
     ):
         """Initialize a POINT annotation, i.e. a single point in plane.
 
@@ -278,7 +278,7 @@ class PointSet(AnnotationObject):
         self,
         coords: list[any] | tuple[any, ...] | np.ndarray,
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
     ):
         """Initialize a POINTSET annotation, i.e. a collection
          of points in plane.
@@ -323,7 +323,7 @@ class PolyLine(AnnotationObject):
         self,
         coords: list[any] | tuple[any, ...] | np.ndarray,
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
     ):
         """Initialize a POLYLINE object.
 
@@ -368,7 +368,7 @@ class Polygon(AnnotationObject):
         self,
         coords: list[any] | tuple[any, ...] | np.ndarray,
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
     ):
         """Initialize a POINTSET annotation, i.e. a collection
          of points in plane.
@@ -416,7 +416,7 @@ class Circle(Polygon):
         center: list[any] | tuple[any, ...] | np.ndarray,
         radius: float,
         name: str | None = None,
-        data: dict[str, np.float32] = {},
+        data: dict[str, np.float32] | None = None,
         n_points: int = 8,
     ):
         alpha = np.array([k * 2 * np.pi / n_points for k in range(n_points)])

@@ -241,8 +241,9 @@ def _pack_sparse(data: dict[str, object] | None, name_to_id: dict[str, int]) -> 
             continue
         try:
             fv = float(v)  # enforce numeric scalar
-        except Exception:
-            continue
+        except (ValueError, TypeError):
+            import logging
+            logging.warning(f"Couldn't convert {k} (={v}) to float. Skipping.")
         ids.append(aid)
         vals.append(fv)
 

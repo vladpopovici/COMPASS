@@ -149,7 +149,7 @@ def ycbcr2rgb(im: np.ndarray) -> np.ndarray:
                      [0, -0.391, 2.018],
                      [1.596, -0.813, 0]])
 
-    r = im.reshape((h * w, c))
+    r = im.reshape((h * w, c)).astype(np.float32)
 
     r[:, 0] -= 16.0
     r[:, 1:3] -= 128.0
