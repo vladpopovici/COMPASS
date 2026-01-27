@@ -531,6 +531,46 @@ def load_annotation(path: str | Path):
 # Query helpers (IDs first; fetch payloads separately)
 # =============================================================================
 
+def query_layer_id(path: str | Path, layer_name: str) -> int:
+    """
+        Resolve a layer name (layers.name) to layer_id.
+
+        Raises:
+          - ValueError if the layer doesn't exist or the DB is not initialized.
+        """
+    conn = _connect(path)
+    try:
+        row = conn.execute("SELECT layer_id FROM layers WHERE name = ?", (str(layer_name),)).fetchone()
+        if row is None:
+            # Provide helpful diagnostic: list existing layer names.
+            rows = conn.execute("SELECT name FROM layers ORDER BY layer_id").fetchall()
+            names = ", ".join([str(r[0]) for r in rows]) if rows else "<none>"
+            raise ValueError(f"Unknown layer name '{layer_name}'. Available layers: {names}")
+        return int(row[0])
+    finally:
+        conn.close()
+
+
+def query_group_id(path: str | Path, group_name: str) -> int:
+    """
+        Resolve a group name to group_id.
+
+        Raises:
+          - ValueError if the group doesn't exist or the DB is not initialized.
+        """
+    conn = _connect(path)
+    try:
+        row = conn.execute("SELECT group_id FROM groups WHERE name = ?", (str(group_name),)).fetchone()
+        if row is None:
+            # Provide helpful diagnostic: list existing layer names.
+            rows = conn.execute("SELECT name FROM groups ORDER BY group_id").fetchall()
+            names = ", ".join([str(r[0]) for r in rows]) if rows else "<none>"
+            raise ValueError(f"Unknown group name '{group_name}'. Available groups: {names}")
+        return int(row[0])
+    finally:
+        conn.close()
+
+
 def query_object_ids_in_layer(path: str | Path, layer_id: int) -> list[int]:
     """
     Return distinct object_ids that belong to any group in the given layer.
@@ -649,8 +689,7 @@ def fetch_objects(path: str | Path, object_ids: list[int]) -> list[object]:
         ).fetchall()
 
         # sparse payload
-        sparse_rows = dict(
-            conn.execute(
+        res = conn.execute(
                 f"""
                 SELECT object_id, ids_u32, vals_f32
                 FROM object_scalar_sparse
@@ -658,7 +697,9 @@ def fetch_objects(path: str | Path, object_ids: list[int]) -> list[object]:
                 """,
                 [int(x) for x in object_ids],
             ).fetchall()
-        )
+        sparse_rows: dict[int, tuple] = {
+            _o: (_u, _f) for _o, _u, _f in res
+        }
 
         out: list[object] = []
         for oid, type_code, obj_name, wkb_blob, circle_r in obj_rows:

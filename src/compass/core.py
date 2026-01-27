@@ -86,7 +86,7 @@ def wsi2hdf5(
 
     wsi_path = Path(wsi_path)
     dst_path = Path(dst_path).with_suffix('.h5')
-    with tempfile.TemporaryDirectory() as tmp_path:
+    with tempfile.TemporaryDirectory(dir="./") as tmp_path:
         tmp_path = Path(tmp_path)
 
         wsi = WSI(wsi_path)
