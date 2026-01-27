@@ -769,6 +769,7 @@ def fetch_geometries(path: str | Path, object_ids: list[int]) -> list[object]:
     return out
 
 
+
 def fetch_scalar_data(path: str | Path, object_ids: list[int]) -> list[object]:
     """
     Fetch the data vector (dict of scalars) associated with a list of object IDs.
