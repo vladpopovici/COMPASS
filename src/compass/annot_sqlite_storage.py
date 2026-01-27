@@ -770,7 +770,7 @@ def fetch_geometries(path: str | Path, object_ids: list[int]) -> list[object]:
 
 
 
-def fetch_scalar_data(path: str | Path, object_ids: list[int]) -> list[object]:
+def fetch_scalar_data(path: str | Path, object_ids: list[int]) -> dict[int, dict[str, float]]:
     """
     Fetch the data vector (dict of scalars) associated with a list of object IDs.
     This does not reconstruct group membership; it returns independent objects.
