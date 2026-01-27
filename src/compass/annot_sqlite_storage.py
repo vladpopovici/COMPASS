@@ -7,6 +7,8 @@
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
+from dask.array import outer
+
 """
 annot_sqlite_storage.py
 
@@ -719,8 +721,89 @@ def fetch_objects(path: str | Path, object_ids: list[int]) -> list[object]:
 
             _decode_geometry(obj, int(type_code), bytes(wkb_blob), circle_r)
             out.append(obj)
-
-        return out
-
     finally:
         conn.close()
+
+    return out
+
+
+def fetch_geometries(path: str | Path, object_ids: list[int]) -> list[object]:
+    """
+    Fetch only object geometries (AnnotationObject instances without data field filled in)
+    for the provided IDs. This does not reconstruct group membership; it returns independent
+    objects.
+
+    If you need full Annotation structures with shared references across groups,
+    use load_annotation(...).
+    """
+    if not object_ids:
+        return []
+
+    conn = _connect(path)
+    try:
+        qmarks = ",".join(["?"] * len(object_ids))
+
+        obj_rows = conn.execute(
+            f"""
+            SELECT object_id, type_code, name, wkb, circle_r
+            FROM objects
+            WHERE object_id IN ({qmarks})
+            ORDER BY object_id
+            """,
+            [int(x) for x in object_ids],
+        ).fetchall()
+
+        out: list[object] = []
+        for oid, type_code, obj_name, wkb_blob, circle_r in obj_rows:
+            type_str = ANNOT_CODE_TYPE[int(type_code)]
+            obj = createEmptyAnnotationObject(type_str)
+            obj._id = int(oid)
+            if obj_name is not None:
+                obj._name = str(obj_name)
+
+            _decode_geometry(obj, int(type_code), bytes(wkb_blob), circle_r)
+            out.append(obj)
+    finally:
+        conn.close()
+
+    return out
+
+
+def fetch_scalar_data(path: str | Path, object_ids: list[int]) -> list[object]:
+    """
+    Fetch the data vector (dict of scalars) associated with a list of object IDs.
+    This does not reconstruct group membership; it returns independent objects.
+
+    If you need full Annotation structures with shared references across groups,
+    use load_annotation(...).
+    """
+    if not object_ids:
+        return []
+
+    conn = _connect(path)
+    try:
+        qmarks = ",".join(["?"] * len(object_ids))
+
+        # sparse payload
+        res = conn.execute(
+                f"""
+                SELECT object_id, ids_u32, vals_f32
+                FROM object_scalar_sparse
+                WHERE object_id IN ({qmarks})
+                """,
+                [int(x) for x in object_ids],
+            ).fetchall()
+        sparse_rows: dict[int, tuple] = {
+            _o: (_u, _f) for _o, _u, _f in res
+        }
+
+        out: dict[int, dict[str, float]] = {}
+        for oid in sparse_rows:
+            ids_blob, vals_blob = sparse_rows[oid]
+            data = _unpack_sparse(conn, bytes(ids_blob), bytes(vals_blob))
+            out[oid] = data
+    finally:
+        conn.close()
+
+    return out
+
