@@ -40,6 +40,13 @@ processing = [
     "opencv-python-headless>=4.12.0.88,<5.0.0.0",
     "simpleitk>=2.5.3,<3.0.0",
 ]
+# The Qt viewer (compass.viewer). PySide6 (LGPL) rather than PyQt (GPL) —
+# the project is MIT-licensed.
+viewer = [
+    "vispy>=0.14.3",
+    "PySide6>=6.7",
+    "psygnal>=0.11",
+]
 # Everything the legacy modules (compass.legacy) still import; goes away as
 # the migration completes.
 legacy = [
@@ -52,6 +59,9 @@ legacy = [
 [dependency-groups]
 dev = [
     "pytest>=8.3",
+    # headless viewer-logic tests (state/tiling/fetch) without pulling
+    # Qt/vispy into the dev env — vispy needs libGL even at import time
+    "psygnal>=0.11",
     "matplotlib>=3.10.8,<4.0.0",
     "ipython>=9.8.0,<10.0.0",
     "jupyterlab>=4.5.1,<5.0.0",

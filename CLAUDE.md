@@ -36,9 +36,15 @@ src/compass/
 Migration status: `core/` is ported (pyramid protocol, Magnification, Zarr
 raster, vectorized AnnotationStore); `connector/` is ported (`wsi.py`
 OpenSlide reader, `ingest.py: wsi2zarr` pyvips->Zarr pyramid baking,
-`export.py: raster2tiff` OME-TIFF interchange); `processing/` and
-`viewer/` are scaffolded stubs. See @docs/architecture.md for the
-legacy-module -> target mapping and what changes on the way.
+`export.py: raster2tiff` OME-TIFF interchange); `viewer/` covers build
+steps 1-3 of architecture section 7 (psygnal ViewerState, headless tile
+grid/LRU cache/threaded fetcher, vispy SlideCanvas with pan/zoom +
+level-switching tile streaming, `python -m compass.viewer slide.zarr`
+entry point; PySide6, LGPL — not PyQt/GPL). The vispy/Qt layer cannot
+run or even import on this machine (no libGL) — it is compile-checked
+only; run it on a machine with OpenGL via `uv sync --extra viewer`.
+`processing/` is still a scaffolded stub. See @docs/architecture.md for
+the legacy-module -> target mapping and what changes on the way.
 
 ## Hard constraints (do not relitigate without asking)
 
