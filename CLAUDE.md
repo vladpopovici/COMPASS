@@ -34,7 +34,9 @@ src/compass/
 ```
 
 Migration status: `core/` is ported (pyramid protocol, Magnification, Zarr
-raster, vectorized AnnotationStore); `connector/`, `processing/`,
+raster, vectorized AnnotationStore); `connector/` is ported (`wsi.py`
+OpenSlide reader, `ingest.py: wsi2zarr` pyvips->Zarr pyramid baking,
+`export.py: raster2tiff` OME-TIFF interchange); `processing/` and
 `viewer/` are scaffolded stubs. See @docs/architecture.md for the
 legacy-module -> target mapping and what changes on the way.
 
