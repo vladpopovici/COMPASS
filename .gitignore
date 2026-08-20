@@ -5,3 +5,6 @@ __pycache__
 *.v
 .ipynb_checkpoints*
 src/compass/__pycache__/**
+.venv/
+.compass-core.log*
+src.zip
