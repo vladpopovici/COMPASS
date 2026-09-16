@@ -1,47 +1,54 @@
 COMPASS: Computational Pathology and Spatial Statistics
 ===============================================================
 
-Design principles
------------------
+A local, non-browser, single-process Qt application (and Python library)
+for viewing large pathology whole-slide images — rasters up to roughly
+200,000 x 200,000 px, multi-channel, micron-calibrated — together with
+millions of associated vector/raster annotations (cell-level points,
+region polygons, segmentation maps, sparse molecular profiles).
 
-This package contains both a rich library of functions for computational
-pathology and a collection of applications dealing with various problems,
-including spatial transcriptomics. This broad coverage comes with the 
-price of installing many dependencies.
+Documentation
+-------------
 
-To avoid having to deal with various image (and data) formats (and their
-evolving specifications), we store the data as arrays in HDF5 files, with images
-saved in pyramidal structures.
-An image pyramid is stored as a group with datasets (named "data") representing 
-its levels:
+* [`docs/index.md`](docs/index.md) — package layout, current API, and
+  how to install/run/test the code in `src/compass/` (excluding
+  `src/compass/legacy/`, the original flat modules being ported over).
+* [`docs/architecture.md`](docs/architecture.md) — the design decision
+  log: what was decided, why, and what alternatives were rejected.
+
+Package layout
+---------------
+
 ```
-pyramid_<k>.h5
-   /--- 0 <- highest resolution (largest image)
-   /--- 1
-   ...
-   /--- n-1 <- lowest resolution 
+src/compass/
+  core/         PyramidalRaster protocol + Zarr backend, vectorized
+                annotation data-access layer. Minimal deps.
+  connector/    AnnData/SpatialData conversion, WSI ingestion
+                (OpenSlide/Bio-Formats), pyvips pyramid writer.
+  processing/   Domain algorithms (tissue detection, stain
+                normalization, patch sampling, registration, Visium).
+  viewer/       vispy/Qt gigapixel canvas, psygnal reactive state,
+                pyqtgraph/matplotlib analytical panels.
+  legacy/       original flat modules, unchanged, being ported per
+                docs/architecture.md. No new code here.
 ```
-To access a layer's data, one can use the path "/<level>/data" in HDF5 functions.
 
-In addition, "pyramid_<k>" has a few attributed (meta-data) guaranteed:
-* `max_level`: number of levels in the pyramid
-* `channel_names`: normally R, G, B, but others may be possible
-* `dimension_names`: normally y, x, c
-* `mpp_x` and `mpp_y`: the original resolution (microns-per-pixel) for x and y dimensions
-* `mag_step`: magnification step (usually 2.0): scaling factor between pyramid levels
-* `objective_power`: native objective used to acquire the image (e.g. 20.0 or 40.0)
-* `extent`: a `2 x max_level` array with `extent[0,i]` and `extent[1,i]` indicating
-   the width and height of level `i`, respectively
+Raster images are stored as pyramidal Zarr v3 (sharding codec) groups,
+one array per level (`0` = highest resolution), with `mpp`/channel
+metadata as attrs — see `docs/architecture.md` for why Zarr rather than
+the HDF5 layout this project originally used.
 
-A tissue section may have several pyramids (`pyramid_0`, ..., `pyramid_n`) as long as they
-refer to the exact same specimen, and they are aligned (registered). They may represent
-different modalities (e.g., H&E and IHC), or different versions of the same image (e.g.,
-gray-scale or stain-normalized image). `pyramid_0` is taken as the reference, and it defines
-the space in which the annotations are produced/saved, and all the analyses carried out.
+Quick start
+-----------
 
+```bash
+uv sync                    # core deps + dev group
+uv run pytest src/compass/tests -q
 
-Requirements
-----------------
+# optional extras, as needed:
+uv sync --extra connector  # WSI ingestion (pyvips, OpenSlide)
+uv sync --extra processing # domain algorithms (scikit-image, opencv, ...)
+uv sync --extra viewer     # Qt/vispy viewer (needs OpenGL)
+```
 
-1. Openslide
-2. PyVIPS - make sure it is able to use openslide for reading whole-slide images.
+See [`docs/index.md`](docs/index.md) for usage examples of each package.
