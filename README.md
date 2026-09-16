@@ -1,7 +1,9 @@
 COMPASS: Computational Pathology and Spatial Statistics
 ===============================================================
 
-A local, non-browser, single-process Qt application (and Python library)
+COMPASS is both a library, collection of tools for analyzing images
+in the context of molecular data, and a viewer. The viewer is 
+a local, non-browser, single-process Qt application (and Python library)
 for viewing large pathology whole-slide images — rasters up to roughly
 200,000 x 200,000 px, multi-channel, micron-calibrated — together with
 millions of associated vector/raster annotations (cell-level points,
