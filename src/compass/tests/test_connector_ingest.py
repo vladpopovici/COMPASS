@@ -17,6 +17,7 @@ independent of the real image codecs.
 
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -184,6 +185,53 @@ def test_wsi2zarr_no_crop_and_overwrite(fake_slide, tmp_path):
     assert ZarrRaster(dst).nlevels == m.nlevels
 
 
-def test_wsi2zarr_band_size_must_align():
-    with pytest.raises(ValueError):
-        wsi2zarr("x", "y", chunk_size=512, shard_factor=8, band_size=1000)
+def test_wsi2zarr_tmp_dir(fake_slide, tmp_path, monkeypatch):
+    slide_path, arr = fake_slide
+    scratch = tmp_path / "scratch"
+    seen = []
+    orig_write = FakeVipsImage.write_to_file
+
+    def spy_write(self, path):
+        seen.append(Path(path))
+        orig_write(self, path)
+
+    monkeypatch.setattr(FakeVipsImage, "write_to_file", spy_write)
+    dst = tmp_path / "out" / "slide.zarr"
+    wsi2zarr(slide_path, dst, crop=False, min_size=512, chunk_size=64,
+             shard_factor=2, tmp_dir=scratch)
+
+    # intermediates went to tmp_dir, not next to the destination...
+    assert seen and all(p.is_relative_to(scratch) for p in seen)
+    # ...and were cleaned up afterwards
+    assert list(scratch.iterdir()) == []
+    np.testing.assert_array_equal(ZarrRaster(dst).get_plane(0), arr)
+
+
+def test_wsi2zarr_copies_shard_by_shard(fake_slide, tmp_path, monkeypatch):
+    slide_path, arr = fake_slide
+    crops = []
+    orig_crop = FakeVipsImage.crop
+
+    def spy_crop(self, x0, y0, w, h):
+        crops.append((w, h))
+        return orig_crop(self, x0, y0, w, h)
+
+    monkeypatch.setattr(FakeVipsImage, "crop", spy_crop)
+    wsi2zarr(slide_path, tmp_path / "s.zarr", crop=False, min_size=512,
+             chunk_size=64, shard_factor=2)
+
+    # first crop is the level-0 ROI crop; every copy-step read is <= 1 shard
+    copy_crops = crops[1:]
+    assert len(copy_crops) > 1
+    assert all(w <= 128 and h <= 128 for w, h in copy_crops)
+
+
+def test_wsi2zarr_level_smaller_than_chunk(fake_slide, tmp_path):
+    # default chunk_size=512: coarsest level (350x275) is smaller than one
+    # chunk, so its chunks are clipped and shards must follow
+    slide_path, arr = fake_slide
+    dst = tmp_path / "s.zarr"
+    wsi2zarr(slide_path, dst, crop=True, min_size=256)
+    m = ZarrRaster(dst)
+    assert m.shape(2) == ImageShape(width=350, height=275)
+    np.testing.assert_array_equal(m.get_plane(0), arr[16:16 + 1100, 8:8 + 1400])
