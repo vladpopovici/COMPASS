@@ -12,18 +12,20 @@ Heavy/volatile dependencies are isolated here. This package is never
 imported by ``compass.viewer`` or ``compass.processing``; it runs as
 one-shot conversion tooling that writes into ``compass.core`` formats.
 
-pyvips is imported lazily inside the functions that use it; OpenSlide only
-by the ``wsi`` submodule (``from compass.connector.wsi import WSI``), so
-importing ``compass.connector`` itself needs neither system library.
+pyvips and tifffile are imported lazily inside the functions that use
+them; OpenSlide only by the ``wsi`` submodule (``from compass.connector.wsi
+import WSI``), so importing ``compass.connector`` itself needs none of them.
 """
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
 from .export import build_omexml, raster2tiff
-from .ingest import plan_levels, resolve_crop, wsi2zarr
+from .ingest import box_downsample, ometiff2zarr, plan_levels, resolve_crop, wsi2zarr
 
 __all__ = [
+    "box_downsample",
     "build_omexml",
+    "ometiff2zarr",
     "plan_levels",
     "raster2tiff",
     "resolve_crop",

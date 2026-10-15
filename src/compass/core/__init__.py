@@ -21,7 +21,8 @@ from .annot import (ANNOT_CODE_TYPE, ANNOT_TYPE_CODE, SCHEMA_VERSION,
 from .magnif import Magnification
 from .pyramid import PyramidalRaster, rasterize_polygon
 from .types import ImageShape, Px
-from .zarr_raster import ZarrRaster, write_pyramid
+from .zarr_raster import (ZarrRaster, create_level_array, write_pyramid,
+                          write_pyramid_attrs)
 
 __all__ = [
     "ANNOT_CODE_TYPE",
@@ -34,7 +35,9 @@ __all__ = [
     "SCHEMA_VERSION",
     "SQLITE_DDL",
     "ZarrRaster",
+    "create_level_array",
     "init_db",
     "rasterize_polygon",
     "write_pyramid",
+    "write_pyramid_attrs",
 ]

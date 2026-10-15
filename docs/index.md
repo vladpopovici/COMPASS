@@ -90,8 +90,10 @@ uv run pytest src/compass/tests -q
 
 The suite covers `core` (magnification math, Zarr raster I/O, annotation
 store), the headless parts of `viewer` (state, tile grid/cache, fetcher),
-and `connector.ingest` (planning helpers, and the full `wsi2zarr` pipeline
-against numpy stand-ins for pyvips and OpenSlide). It doesn't exercise the
+and `connector.ingest` (planning helpers, the full `wsi2zarr` pipeline
+against numpy stand-ins for pyvips and OpenSlide, and `ometiff2zarr`
+end-to-end on real OME-TIFFs written by tifffile — which is in the dev
+group, so these run under a plain `uv sync`). It doesn't exercise the
 vispy canvas or the Qt entry point.
 
 # Quick start
@@ -104,6 +106,11 @@ its annotations) from Python or the viewer.
 from compass.connector import wsi2zarr
 
 wsi2zarr("slide.mrxs", "slide.zarr", crop=True)
+
+# ...or, for an OME-TIFF (pure Python, no libvips needed)
+from compass.connector import ometiff2zarr
+
+ometiff2zarr("slide.ome.tif", "slide.zarr")
 ```
 
 ```python
@@ -129,12 +136,17 @@ uv run python -m compass.viewer slide.zarr
 ## Raster pyramid (Zarr v3, sharded)
 
 One Zarr group per image; one array per level, named `"0"`, `"1"`, ….
-Written by `core.write_pyramid` (in-memory arrays) and
-`connector.wsi2zarr` (streamed from a slide); read by `core.ZarrRaster`.
+Written by `core.write_pyramid` (in-memory arrays),
+`connector.wsi2zarr` (streamed from a vendor slide) and
+`connector.ometiff2zarr` (streamed from an OME-TIFF); read by
+`core.ZarrRaster`. All three create arrays and metadata through
+`core.create_level_array` / `core.write_pyramid_attrs`, so the layout
+below is defined in one place.
 
 | Item | Value |
 |---|---|
-| Array shape | `(height, width, channels)` or `(height, width)` |
+| Array shape | `(height, width, channels)` or `(height, width)` (the ingestion tools always write the 3-D form, single-channel as `(h, w, 1)`) |
+| Dtype | as ingested: `uint8` for vendor slides, the source dtype (e.g. `uint16`) for OME-TIFF |
 | Chunks | `chunk_size × chunk_size` (default 512 — the viewer's tile size), clipped on levels smaller than one chunk |
 | Shards | `shard_factor × shard_factor` chunks (default 8 → 4096 × 4096 px) |
 | Codec | Blosc zstd, level 3, byte shuffle |
@@ -169,7 +181,8 @@ Geometry type codes (`ANNOT_TYPE_CODE`): `POINT=1`, `POINTSET=2`,
 ```python
 from compass.core import (ZarrRaster, write_pyramid, PyramidalRaster,
                           Magnification, AnnotationStore, init_db,
-                          ImageShape, Px, rasterize_polygon)
+                          ImageShape, Px, rasterize_polygon,
+                          create_level_array, write_pyramid_attrs)
 ```
 
 Dependencies: numpy, zarr, shapely, geopandas, polars, pandas, pydantic,
@@ -327,7 +340,7 @@ crop.shape    # (296, 316, 3)
 
 Writes the Zarr layout from fully materialized per-level arrays — for maps
 (segmentations, masks), test fixtures and small images. Use
-`connector.wsi2zarr` for whole slides.
+`connector.wsi2zarr` / `connector.ometiff2zarr` for whole slides.
 
 ```python
 write_pyramid(path, levels, *, base_mpp, base_objective_power,
@@ -349,6 +362,27 @@ m = ZarrRaster("regions.zarr")
 m.nchannels, m.channel_names, m.get_region_px(0, 0, 4, 4).shape
 # (1, ['region'], (4, 4))
 ```
+
+## Streaming writers: `create_level_array`, `write_pyramid_attrs`
+
+The two building blocks under `write_pyramid`, for writers that fill a
+level piece by piece instead of from one in-memory array (the
+`connector` ingestion functions use them):
+
+```python
+root = zarr.create_group("big.zarr")
+arr = create_level_array(root, 0, (h, w, 3), "uint8",
+                         chunk_size=512, shard_factor=8)   # empty array "0"
+... # fill arr, ideally one whole shard per write (arr.shards)
+write_pyramid_attrs(root, nlevels, mpp_x=0.25, mpp_y=0.25,
+                    objective_power=40.0, mag_step=2,
+                    channel_names=["R", "G", "B"])
+```
+
+`create_level_array` applies the canonical chunking (clipped on small
+levels), sharding and codec; channels are never split across chunks.
+`write_pyramid_attrs` writes the group and per-level attributes once all
+level arrays exist; `base_mpp` is the mean of `mpp_x` and `mpp_y`.
 
 Subsample nearest-neighbor (`[::2, ::2]`) for label maps, never
 interpolate.
@@ -606,13 +640,17 @@ Module-level constants: `SQLITE_DDL`, `SCHEMA_VERSION` (`"1"`),
 # `compass.connector`
 
 ```python
-from compass.connector import wsi2zarr, raster2tiff, build_omexml, plan_levels, resolve_crop
+from compass.connector import (wsi2zarr, ometiff2zarr, raster2tiff,
+                               build_omexml, plan_levels, resolve_crop,
+                               box_downsample)
 from compass.connector.wsi import WSI   # imports OpenSlide
 ```
 
 One-shot ingestion and interchange tools. Never imported by the viewer or
-by `processing`. Needs `uv sync --extra connector` and libvips for the
-actual conversions. `plan_levels` and `resolve_crop` are pure Python.
+by `processing`. Needs `uv sync --extra connector`; `wsi2zarr` and
+`raster2tiff` also need the libvips system library, while `ometiff2zarr`
+only needs tifffile (pure Python). `plan_levels`, `resolve_crop` and
+`box_downsample` are pure Python.
 
 ## `WSI` — ingestion-only slide reader
 
@@ -688,9 +726,90 @@ works.
 check a few landmark annotations against the converted raster
 (architecture §3).
 
+## `ometiff2zarr` — bake an OME-TIFF into the Zarr pyramid
+
+```python
+ometiff2zarr(src_path, dst_path, series=None, z=None, t=None, crop=False,
+             mpp=None, objective_power=None, channel_names=None,
+             downscale_factor=2, min_size=256, chunk_size=512,
+             shard_factor=8, overwrite=False)
+```
+
+For OME-TIFF files: exports from other tools (QuPath, Bio-Formats
+`bfconvert`, `raster2tiff`), and multiplex/fluorescence images with many
+`uint16` channels. Reads through tifffile — no pyvips, no OpenSlide.
+
+| Parameter | Meaning |
+|---|---|
+| `series` | Image series to convert; default: the one with the largest full-resolution plane (skips label/macro images) |
+| `z`, `t` | Plane to take along Z/T. Required when that axis has more than one plane; a stack is never reduced silently |
+| `crop` | `False`: whole image. `(x0, y0, w, h)`: explicit level-0 region, clamped. OME-TIFF has no scan ROI, so `True` behaves like `False` |
+| `mpp` | Microns per pixel at level 0, one value or `(mpp_x, mpp_y)`. Overrides the file's `PhysicalSizeX/Y`; **required** if the file has none |
+| `objective_power` | Overrides the file's `NominalMagnification`; **required** if the file has none |
+| `channel_names` | Overrides the OME channel names |
+| `downscale_factor` | Integer scale between consecutive levels (≥ 2) |
+| `min_size`, `chunk_size`, `shard_factor`, `overwrite` | As for `wsi2zarr` |
+
+```python
+from compass.connector import ometiff2zarr
+
+# brightfield RGB export, calibrated
+ometiff2zarr("slide.ome.tif", "slide.zarr")
+
+# multiplex immunofluorescence, uint16, no magnification in the file
+ometiff2zarr("mif.ome.tiff", "mif.zarr", objective_power=20.0)
+
+# a z-stack: pick the plane explicitly
+ometiff2zarr("stack.ome.tif", "stack.zarr", z=3, mpp=0.325, objective_power=40.0)
+```
+
+**Metadata.** Read from the OME-XML of the chosen image:
+
+- *mpp*: `Pixels/@PhysicalSizeX|Y`, converted from `PhysicalSizeXUnit`
+  (pm, Å, nm, µm, mm, cm, m; µm if absent). If only one axis is given it
+  is used for both.
+- *objective power*: the `Objective` referenced by the image's
+  `ObjectiveSettings`; failing that, the only objective of the image's
+  instrument (as in `raster2tiff`'s minimal OME-XML); failing that, the
+  only objective in the file.
+- *channel names*: `Channel/@Name`, used if every channel has one;
+  otherwise `R, G, B` for interleaved RGB and `C0 … Cn` for the rest.
+
+Missing calibration is an **error**, not a default: a wrong mpp silently
+misaligns every annotation in microns. Pass `mpp=` / `objective_power=`
+explicitly when the file lacks them.
+
+**Axes and dtype.** Any layout tifffile reports — interleaved `YXS` (RGB),
+planar `CYX`, `TCZYX`, … — is normalized to `(height, width, channels)`;
+single-channel images are stored as `(h, w, 1)`. The dtype is kept
+(`uint16` stays `uint16`). Channels are not split across chunks, so a
+chunk of a 40-channel `uint16` image is 40 × 512 × 512 × 2 bytes (20 MB)
+uncompressed.
+
+**How it works.** As with `wsi2zarr`, the pyramid is regenerated rather
+than copied from the file's own levels. Level 0 is copied one whole shard
+at a time from tifffile's lazy Zarr view of the TIFF tiles. Each further
+level is built from the previous **Zarr** level: an output shard maps onto
+a `downscale_factor`-times larger, shard-aligned block above, which is
+box-averaged (mean over `f × f` pixels, integers rounded). There are no
+temporary files and no `tmp_dir`; peak memory is about
+`downscale_factor²` shards (~200 MB at the defaults for RGB `uint8`).
+Box averaging differs slightly from the pyvips resampling `wsi2zarr`
+uses, so lower levels of the two paths are not bit-identical.
+
+`box_downsample(block, factor)` is the filter on its own:
+
+```python
+box_downsample(np.array([[0, 1], [1, 1]], np.uint8), 2)   # [[1]]  (0.75 rounds up)
+```
+
+Series are matched to OME `Image` elements by index (tifffile builds one
+series per OME image, in order); a file mixing OME and non-OME series may
+pair metadata with the wrong image.
+
 ## Planning helpers
 
-The pure functions `wsi2zarr` uses to decide what it will do — useful to
+The pure functions `wsi2zarr` and `ometiff2zarr` use to decide what it will do — useful to
 preview a conversion:
 
 ```python
@@ -1025,5 +1144,10 @@ dist_px0 = 100 / raster.native_resolution  # 100 µm in level-0 pixels (400.0)
   RGB.
 - **`ZarrRaster`** ignores `as_type` and raises on out-of-bounds reads
   rather than padding.
-- **Ingestion** reads through OpenSlide only. The Bio-Formats cross-check
-  for MRXS is agreed in principle but not implemented (architecture §8).
+- **Vendor-slide ingestion** (`wsi2zarr`) reads through OpenSlide only.
+  The Bio-Formats cross-check for MRXS is agreed in principle but not
+  implemented (architecture §8). OME-TIFF files go through tifffile
+  (`ometiff2zarr`) instead.
+- **`ometiff2zarr`** doesn't reuse the file's own pyramid levels (always
+  rebuilt) and keeps all channels in one chunk; both may need revisiting
+  for large multiplex images. Not yet run on a real scanner/multiplex file.

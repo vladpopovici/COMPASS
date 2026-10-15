@@ -332,6 +332,7 @@ dev = [
     { name = "pandas-stubs" },
     { name = "psygnal" },
     { name = "pytest" },
+    { name = "tifffile" },
 ]
 
 [package.metadata]
@@ -358,7 +359,7 @@ requires-dist = [
     { name = "shapely", specifier = ">=2.1.2,<3.0.0" },
     { name = "simpleitk", marker = "extra == 'processing'", specifier = ">=2.5.3,<3.0.0" },
     { name = "simplejson", marker = "extra == 'legacy'", specifier = ">=3.20.2,<4.0.0" },
-    { name = "tifffile", marker = "extra == 'connector'", specifier = ">=2024.8.30" },
+    { name = "tifffile", marker = "extra == 'connector'", specifier = ">=2025.5.10" },
     { name = "tqdm", marker = "extra == 'legacy'", specifier = ">=4.67.1,<5.0.0" },
     { name = "vispy", marker = "extra == 'viewer'", specifier = ">=0.14.3" },
     { name = "zarr", specifier = ">=3.0.8" },
@@ -374,6 +375,7 @@ dev = [
     { name = "pandas-stubs", specifier = ">=2.3.3,<2.4.0" },
     { name = "psygnal", specifier = ">=0.11" },
     { name = "pytest", specifier = ">=8.3" },
+    { name = "tifffile", specifier = ">=2025.5.10" },
 ]
 
 [[package]]
@@ -2678,14 +2680,14 @@ wheels = [
 
 [[package]]
 name = "tifffile"
-version = "2024.12.12"
+version = "2026.9.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/c9/fc4e490c5b0ccad68c98ea1d6e0f409bd7d50e2e8fc30a0725594d3104ff/tifffile-2024.12.12.tar.gz", hash = "sha256:c38e929bf74c04b6c8708d87f16b32c85c6d7c2514b99559ea3db8003ba4edda", size = 365416, upload-time = "2024-12-13T02:05:16.73Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/66/634db78ebad513038d753830dd8815eea26278b5463ba0f43198b0c24c4e/tifffile-2026.9.20.tar.gz", hash = "sha256:30e145a7042ce7143ae50a50fe8b7221b0070aae22adab8f9e79a264be6b5cdc", size = 449417, upload-time = "2026-09-21T03:59:40.055Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/1e/76cbc758f6865a9da18001ac70d1a4154603b71e233f704401fc7d62493e/tifffile-2024.12.12-py3-none-any.whl", hash = "sha256:6ff0f196a46a75c8c0661c70995e06ea4d08a81fe343193e69f1673f4807d508", size = 227538, upload-time = "2024-12-13T02:05:13.974Z" },
+    { url = "https://files.pythonhosted.org/packages/05/bf/04f3e61cb20a03678ca43f29bae9a7d0b7d9f563b86f5f600b2d8fba9712/tifffile-2026.9.20-py3-none-any.whl", hash = "sha256:9b913167b8f66a57f2e7c0454486c4c4607196d494797461226166bd0755c0e6", size = 275004, upload-time = "2026-09-21T03:59:38.46Z" },
 ]
 
 [[package]]

@@ -26,7 +26,8 @@ src/compass/
   core/         PyramidalRaster protocol + Zarr backend, vectorized
                 annotation data-access layer. Minimal deps.
   connector/    AnnData/SpatialData conversion, WSI ingestion
-                (OpenSlide/Bio-Formats), pyvips pyramid writer.
+                (OpenSlide/Bio-Formats, pyvips pyramid writer),
+                OME-TIFF ingestion (tifffile), OME-TIFF export.
   processing/   Domain algorithms (tissue detection, stain
                 normalization, patch sampling, registration, Visium).
   viewer/       vispy/Qt gigapixel canvas, psygnal reactive state,
@@ -48,7 +49,7 @@ uv sync                    # core deps + dev group
 uv run pytest src/compass/tests -q
 
 # optional extras, as needed:
-uv sync --extra connector  # WSI ingestion (pyvips, OpenSlide)
+uv sync --extra connector  # WSI / OME-TIFF ingestion (pyvips, OpenSlide, tifffile)
 uv sync --extra processing # domain algorithms (scikit-image, opencv, ...)
 uv sync --extra viewer     # Qt/vispy viewer (needs OpenGL)
 ```

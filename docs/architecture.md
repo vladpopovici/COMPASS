@@ -98,6 +98,21 @@ environment as the viewer). Verify a handful of known landmark annotations
 align correctly on the converted raster before trusting a new ingestion
 pipeline for a given scanner/format combination.
 
+### OME-TIFF ingestion
+
+`connector.ometiff2zarr` reads OME-TIFF with tifffile, not pyvips/OpenSlide:
+pure Python, handles planar multi-channel and uint16 (multiplex/fluorescence),
+and parses the OME-XML (PhysicalSizeX/Y with unit conversion,
+NominalMagnification, channel names). Missing calibration is an error unless
+passed explicitly (`mpp=`, `objective_power=`) — never a silent default.
+Axes are normalized to YXC; a Z/T stack must be reduced explicitly (`z=`,
+`t=`). As with `wsi2zarr` the pyramid is rebuilt, not copied: level 0 is
+copied shard by shard from tifffile's lazy Zarr view, lower levels are
+box-averaged (integer factor) from the previous Zarr level, shard-aligned,
+so no temporary files are needed. Both ingest paths and
+`core.write_pyramid` share `core.create_level_array` /
+`core.write_pyramid_attrs`, so they cannot drift apart in layout.
+
 ### Legacy code mapping
 
 - `compass/_wsi.py` (`WSI`, OpenSlide-backed `PyramidalImage`): keep the

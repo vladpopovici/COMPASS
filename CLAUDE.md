@@ -36,6 +36,8 @@ src/compass/
 Migration status: `core/` is ported (pyramid protocol, Magnification, Zarr
 raster, vectorized AnnotationStore); `connector/` is ported (`wsi.py`
 OpenSlide reader, `ingest.py: wsi2zarr` pyvips->Zarr pyramid baking,
+`ingest.py: ometiff2zarr` tifffile->Zarr (multi-channel/uint16, OME-XML
+calibration, box-averaged levels built from Zarr, no temp files),
 `export.py: raster2tiff` OME-TIFF interchange); `viewer/` covers build
 steps 1-3 of architecture section 7 (psygnal ViewerState, headless tile
 grid/LRU cache/threaded fetcher, vispy SlideCanvas with pan/zoom +

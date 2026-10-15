@@ -17,8 +17,12 @@ shard-by-shard copy into the destination arrays — with the write step
 producing the layout of :func:`compass.core.zarr_raster.write_pyramid`
 instead of HDF5 groups.
 
-pyvips is imported lazily (inside the functions that need it) so the pure
-planning helpers remain importable without libvips installed.
+OME-TIFF ingestion (:func:`ometiff2zarr`) reads through tifffile instead
+(multi-channel, uint16, OME-XML calibration) and builds the lower levels
+directly from the Zarr arrays already written, without temporary files.
+
+pyvips and tifffile are imported lazily (inside the functions that need
+them) so the pure planning helpers remain importable without them.
 """
 
 import logging
@@ -26,11 +30,12 @@ import tempfile
 from math import floor
 from os import PathLike
 from pathlib import Path
+from typing import Callable
 
+import numpy as np
 import zarr
-from zarr.codecs import BloscCodec
 
-from ..core.zarr_raster import FORMAT_VERSION
+from ..core.zarr_raster import create_level_array, write_pyramid_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +90,36 @@ def plan_levels(width: int, height: int,
             break
         levels.append({'w': w, 'h': h, 'x0': cx0, 'y0': cy0})
     return levels
+
+
+def _fill_by_shards(arr: zarr.Array,
+                    read_block: Callable[[int, int, int, int], np.ndarray]) -> None:
+    """Fill ``arr`` one whole shard per write: ``read_block(x, y, w, h)``
+    returns the (h, w[, c]) source block for that shard. No
+    read-modify-write of partial shards, and memory bounded by the shard
+    (not the slide) size."""
+    ch, cw = arr.shape[0:2]
+    shy, shx = arr.shards[0:2]
+    for j in range(0, ch, shy):
+        bh = min(shy, ch - j)
+        for i in range(0, cw, shx):
+            bw = min(shx, cw - i)
+            arr[j: j + bh, i: i + bw] = read_block(i, j, bw, bh)
+
+
+def box_downsample(block: np.ndarray, factor: int) -> np.ndarray:
+    """Downsample (h, w[, c]) by an integer ``factor`` with box averaging
+    (mean over ``factor x factor`` blocks), keeping the dtype (integers are
+    rounded). Trailing rows/columns that do not fill a whole box are
+    dropped, consistent with :func:`plan_levels`' floor rounding."""
+    h, w = block.shape[0] // factor, block.shape[1] // factor
+    b = block[: h * factor, : w * factor]
+    b = b.reshape((h, factor, w, factor) + block.shape[2:])
+    acc = np.float64 if block.dtype.itemsize > 2 else np.float32
+    out = b.mean(axis=(1, 3), dtype=acc)
+    if np.issubdtype(block.dtype, np.integer):
+        out = np.rint(out)
+    return out.astype(block.dtype)
 
 
 ##-
@@ -162,46 +197,170 @@ def wsi2zarr(
 
         logger.info("wsi2zarr: from temporary to destination")
         root = zarr.create_group(str(dst_path), overwrite=overwrite)
-        codec = BloscCodec(cname="zstd", clevel=3, shuffle="shuffle")
 
         for level in range(nlevels):
             logger.info("wsi2zarr: copying level %d...", level)
             im = pyvips.Image.new_from_file(str(tmp_path / f"level{level}.v"))
-            ch, cw = im.height, im.width
-            # chunks clipped to small levels; shards must stay a multiple
-            # of them (as in write_pyramid)
-            chy, chx = min(chunk_size, ch), min(chunk_size, cw)
-            shy, shx = chy * shard_factor, chx * shard_factor
-            arr = root.create_array(
-                name=str(level),
-                shape=(ch, cw, 3),  # YXC axes
-                dtype="uint8",
-                chunks=(chy, chx, 3),
-                shards=(shy, shx, 3),
-                compressors=codec,
-            )
-            # One whole shard per write: no read-modify-write of partial
-            # shards, and memory bounded by the shard (not the slide) size.
-            for j in range(0, ch, shy):
-                bh = min(shy, ch - j)
-                for i in range(0, cw, shx):
-                    bw = min(shx, cw - i)
-                    arr[j: j + bh, i: i + bw] = im.crop(i, j, bw, bh).numpy()
+            arr = create_level_array(root, level, (im.height, im.width, 3), "uint8",
+                                     chunk_size=chunk_size, shard_factor=shard_factor)
+            _fill_by_shards(arr, lambda x, y, w, h: im.crop(x, y, w, h).numpy())
 
-            # scale-specific metadata
-            sf = downscale_factor ** level  # scale factor from level 0
-            arr.attrs["mpp_x"] = sf * wsi.info['mpp_x']
-            arr.attrs["mpp_y"] = sf * wsi.info['mpp_y']
-            arr.attrs["objective_power"] = wsi.info['objective_power'] / sf
-            arr.attrs["scale_factor"] = sf
-
-        root.attrs["compass_version"] = FORMAT_VERSION
-        root.attrs["level_count"] = nlevels
-        root.attrs["base_mpp"] = 0.5 * (wsi.info["mpp_x"] + wsi.info["mpp_y"])
-        root.attrs["base_mag_step"] = downscale_factor
-        root.attrs["base_objective_power"] = wsi.info['objective_power']
-        root.attrs["channel_names"] = ["R", "G", "B"]
-        root.attrs["dimension_names"] = ["y", "x", "c"]
+        write_pyramid_attrs(root, nlevels,
+                            mpp_x=wsi.info['mpp_x'], mpp_y=wsi.info['mpp_y'],
+                            objective_power=wsi.info['objective_power'],
+                            mag_step=downscale_factor,
+                            channel_names=["R", "G", "B"])
 
     logger.info("wsi2zarr: done")
+##
+
+
+##-
+def ometiff2zarr(
+        src_path: str | Path | PathLike,
+        dst_path: str | Path | PathLike,
+        series: int | None = None,
+        z: int | None = None,
+        t: int | None = None,
+        crop: tuple[int, int, int, int] | bool = False,
+        mpp: float | tuple[float, float] | None = None,
+        objective_power: float | None = None,
+        channel_names: list[str] | None = None,
+        downscale_factor: int = 2,
+        min_size: int = 256,
+        chunk_size: int = 512,
+        shard_factor: int = 8,
+        overwrite: bool = False,
+) -> None:
+    """Convert an OME-TIFF file to the canonical pyramidal Zarr v3 (sharded)
+    format. Highest resolution is level ``"0"``.
+
+    As in :func:`wsi2zarr`, the pyramid is rebuilt rather than copied: level
+    0 is the (cropped) full-resolution plane of the chosen series, copied
+    one shard at a time through tifffile's lazy Zarr view of the TIFF tiles;
+    every further level is box-averaged from the previous Zarr level, shard
+    by shard (an output shard maps onto a ``downscale_factor``-times larger,
+    shard-aligned block of the level above). No temporary files; peak
+    memory ~ ``downscale_factor**2`` shards.
+
+    Any axis layout tifffile reports (interleaved ``YXS`` RGB, planar
+    ``CYX`` multi-channel, ``TCZYX``, ...) is normalized to YXC; the dtype
+    (uint8, uint16, ...) is preserved. Single-channel images are stored as
+    (h, w, 1).
+
+    :param src_path: source OME-TIFF file.
+    :param dst_path: destination Zarr group (directory).
+    :param series: index of the image series to convert (default: the one
+        with the largest full-resolution plane — skips label/macro images).
+    :param z, t: plane to take along Z/T. Needed only when that axis has
+        more than one plane — a stack is never reduced silently.
+    :param crop: False for the whole image, or (x0, y0, width, height) at
+        full resolution (clamped to the image). OME-TIFF has no scan ROI,
+        so True behaves as False.
+    :param mpp: microns-per-pixel at full resolution, either one value or
+        (mpp_x, mpp_y). Overrides ``PhysicalSizeX/Y``; required when the
+        file carries no calibration.
+    :param objective_power: overrides the OME ``NominalMagnification``;
+        required when the file has none.
+    :param channel_names: overrides the OME channel names (default when
+        neither: R,G,B for 3-sample RGB, C0..Cn otherwise).
+    :param downscale_factor: integer downsampling factor between levels.
+    :param min_size: minimum size (either width or height) of the last level.
+    :param chunk_size: chunk edge (pixels); match the viewer's tile size.
+    :param shard_factor: shard edge, in chunks.
+    :param overwrite: overwrite an existing store at ``dst_path``.
+    """
+    import tifffile
+
+    from .ometiff import read_ome_metadata, yxc_selection
+
+    if int(downscale_factor) != downscale_factor or downscale_factor < 2:
+        raise ValueError("downscale_factor must be an integer >= 2")
+    downscale_factor = int(downscale_factor)
+
+    src_path = Path(src_path)
+    dst_path = Path(dst_path)
+    dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with tifffile.TiffFile(src_path) as tif:
+        if series is None:
+            series = max(range(len(tif.series)),
+                         key=lambda k: int(np.prod(tif.series[k].shape)))
+        sr = tif.series[series]
+        meta = (read_ome_metadata(tif.ome_metadata, series) if tif.is_ome
+                else {"mpp_x": None, "mpp_y": None,
+                      "objective_power": None, "channel_names": []})
+
+        # --- calibration: explicit arguments win, then OME-XML, else fail
+        if mpp is not None:
+            mpp_x, mpp_y = (mpp, mpp) if np.isscalar(mpp) else mpp
+        else:
+            mpp_x, mpp_y = meta["mpp_x"], meta["mpp_y"]
+            if mpp_x is None and mpp_y is None:
+                raise ValueError(f"{src_path}: no PhysicalSizeX/Y; pass mpp=")
+            mpp_x = mpp_y if mpp_x is None else mpp_x
+            mpp_y = mpp_x if mpp_y is None else mpp_y
+        if objective_power is None:
+            objective_power = meta["objective_power"]
+            if objective_power is None:
+                raise ValueError(f"{src_path}: no NominalMagnification; pass objective_power=")
+
+        # --- axes -> YXC
+        index, perm, nchannels = yxc_selection(
+            sr.axes, sr.shape, {ax: v for ax, v in (("Z", z), ("T", t)) if v is not None})
+        iy, ix = sr.axes.index("Y"), sr.axes.index("X")
+        height, width = sr.shape[iy], sr.shape[ix]
+
+        if channel_names is None:
+            names = meta["channel_names"]
+            if len(names) == nchannels and all(names):
+                channel_names = list(names)
+            elif nchannels == 3 and "S" in sr.axes:
+                channel_names = ["R", "G", "B"]
+            else:
+                channel_names = [f"C{k}" for k in range(nchannels)]
+        if len(channel_names) != nchannels:
+            raise ValueError(f"{len(channel_names)} channel names for {nchannels} channels")
+
+        x0, y0, width, height = resolve_crop(width, height, {}, crop)
+        levels = plan_levels(width, height, x0, y0, downscale_factor, min_size)
+        nlevels = len(levels)
+        logger.info("ometiff2zarr: series %d (%s %s, %s), %d levels to generate",
+                    series, sr.axes, sr.shape, sr.dtype, nlevels)
+
+        src = zarr.open(sr.aszarr(level=0), mode="r")
+
+        def read_base(x, y, w, h):
+            idx = list(index)
+            idx[iy] = slice(y0 + y, y0 + y + h)
+            idx[ix] = slice(x0 + x, x0 + x + w)
+            block = np.transpose(src[tuple(idx)], perm)
+            return block if block.ndim == 3 else block[..., np.newaxis]
+
+        root = zarr.create_group(str(dst_path), overwrite=overwrite)
+
+        logger.info("ometiff2zarr: copy base level, crop (%d, %d, %d, %d)",
+                    x0, y0, width, height)
+        prev = create_level_array(root, 0, (height, width, nchannels), sr.dtype,
+                                  chunk_size=chunk_size, shard_factor=shard_factor)
+        _fill_by_shards(prev, read_base)
+
+    f = downscale_factor
+    for level in range(1, nlevels):
+        logger.info("ometiff2zarr: generating level %d...", level)
+        arr = create_level_array(root, level,
+                                 (levels[level]['h'], levels[level]['w'], nchannels),
+                                 prev.dtype,
+                                 chunk_size=chunk_size, shard_factor=shard_factor)
+        _fill_by_shards(arr, lambda x, y, w, h, src=prev:
+                        box_downsample(src[f * y: f * (y + h), f * x: f * (x + w)], f))
+        prev = arr
+
+    write_pyramid_attrs(root, nlevels,
+                        mpp_x=mpp_x, mpp_y=mpp_y,
+                        objective_power=objective_power,
+                        mag_step=downscale_factor,
+                        channel_names=channel_names)
+
+    logger.info("ometiff2zarr: done")
 ##

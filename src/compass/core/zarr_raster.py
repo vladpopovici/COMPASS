@@ -219,31 +219,77 @@ def write_pyramid(path: str | Path | PathLike,
         raise ValueError("channel_names length does not match channel count")
 
     root = zarr.create_group(str(path), overwrite=overwrite)
-    codec = BloscCodec(cname="zstd", clevel=3, shuffle="shuffle")
-
     for lv, img in enumerate(levels):
-        h, w = img.shape[0:2]
-        chunks = (min(chunk_size, h), min(chunk_size, w)) + ((nchannels,) if ndim == 3 else ())
-        shards = (chunks[0] * shard_factor, chunks[1] * shard_factor) + ((nchannels,) if ndim == 3 else ())
-        arr = root.create_array(name=str(lv),
-                                shape=img.shape,
-                                dtype=dtype,
-                                chunks=chunks,
-                                shards=shards,
-                                compressors=codec)
+        arr = create_level_array(root, lv, img.shape, dtype,
+                                 chunk_size=chunk_size, shard_factor=shard_factor)
         arr[...] = img
 
+    write_pyramid_attrs(root, len(levels),
+                        mpp_x=base_mpp, mpp_y=base_mpp,
+                        objective_power=base_objective_power,
+                        mag_step=mag_step,
+                        channel_names=channel_names,
+                        ndim=ndim)
+##
+
+
+def create_level_array(root: zarr.Group, level: int,
+                       shape: Sequence[int], dtype,
+                       *,
+                       chunk_size: int = 512,
+                       shard_factor: int = 8) -> zarr.Array:
+    """Create the (empty) array of pyramid ``level`` in ``root``, with the
+    chunking/sharding/codec of the canonical layout. ``shape`` is
+    (height, width[, channels]); channels are never split across chunks.
+
+    Chunks are clipped to small levels; shards stay a whole multiple of
+    them. Shared by :func:`write_pyramid` and the streaming writers in
+    ``compass.connector``, so all of them produce the same layout.
+    """
+    h, w = shape[0:2]
+    extra = tuple(shape[2:])
+    chunks = (min(chunk_size, h), min(chunk_size, w)) + extra
+    shards = (chunks[0] * shard_factor, chunks[1] * shard_factor) + extra
+    return root.create_array(name=str(level),
+                             shape=tuple(shape),
+                             dtype=dtype,
+                             chunks=chunks,
+                             shards=shards,
+                             compressors=BloscCodec(cname="zstd", clevel=3, shuffle="shuffle"))
+
+
+def write_pyramid_attrs(root: zarr.Group, nlevels: int,
+                        *,
+                        mpp_x: float,
+                        mpp_y: float,
+                        objective_power: float,
+                        mag_step: float,
+                        channel_names: Sequence[str],
+                        ndim: int = 3) -> None:
+    """Write the group and per-level metadata read by :class:`ZarrRaster`
+    onto ``root``, whose arrays ``"0"`` .. ``nlevels-1`` already exist.
+
+    Args:
+        mpp_x, mpp_y: microns-per-pixel at level 0 (``base_mpp`` is their
+            mean).
+        objective_power: objective power at level 0.
+        mag_step: scale factor between consecutive levels.
+        channel_names: one name per channel.
+        ndim: dimensionality of the level arrays (3: YXC, 2: YX).
+    """
+    for lv in range(nlevels):
         sf = mag_step ** lv
-        arr.attrs["mpp_x"] = base_mpp * sf
-        arr.attrs["mpp_y"] = base_mpp * sf
-        arr.attrs["objective_power"] = base_objective_power / sf
-        arr.attrs["scale_factor"] = sf
+        attrs = root[str(lv)].attrs
+        attrs["mpp_x"] = mpp_x * sf
+        attrs["mpp_y"] = mpp_y * sf
+        attrs["objective_power"] = objective_power / sf
+        attrs["scale_factor"] = sf
 
     root.attrs["compass_version"] = FORMAT_VERSION
-    root.attrs["level_count"] = len(levels)
-    root.attrs["base_mpp"] = float(base_mpp)
+    root.attrs["level_count"] = nlevels
+    root.attrs["base_mpp"] = 0.5 * (float(mpp_x) + float(mpp_y))
     root.attrs["base_mag_step"] = float(mag_step)
-    root.attrs["base_objective_power"] = float(base_objective_power)
+    root.attrs["base_objective_power"] = float(objective_power)
     root.attrs["channel_names"] = list(channel_names)
     root.attrs["dimension_names"] = ["y", "x", "c"] if ndim == 3 else ["y", "x"]
 ##
