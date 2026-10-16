@@ -161,9 +161,13 @@ def wsi2zarr(
         intermediates are slide-sized.
     :param overwrite: overwrite an existing store at ``dst_path``.
     """
-    import pyvips
-
+    # Order matters: openslide (wheel-bundled libopenslide.so.1, 4.x) must be
+    # loaded before pyvips. libvips' openslide module drags in the system
+    # libopenslide.so.0 (3.x), whose global openslide_* symbols then shadow
+    # the 4.x ones and OpenSlide() fails in read_icc_profile (size -1).
     from .wsi import WSI
+
+    import pyvips
 
     wsi_path = Path(wsi_path)
     dst_path = Path(dst_path)

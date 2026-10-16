@@ -87,8 +87,12 @@ Managed with `uv` (`~/.local/bin/uv`; the poetry lockfile is gone).
 - `uv sync` — core deps + dev group only.
 - `uv sync --extra legacy` — everything the legacy modules import
   (implies extras `connector` + `processing`). Note: importing
-  `compass.legacy.*` additionally needs system libs not present on this
-  machine (libvips, OpenSlide); core tests deliberately don't.
+  `compass.legacy.*` additionally needs system libs (libvips, OpenSlide);
+  these are installed on this machine, but core tests deliberately don't
+  need them. Two libopenslide builds coexist here — system 3.4.1 (pulled
+  in by libvips) and pip `openslide-bin` 4.0.1 — so import `openslide`
+  before `pyvips`, otherwise the 3.x symbols shadow 4.x and
+  `OpenSlide()` fails (see `connector/ingest.py: wsi2zarr`).
 - `uv run pytest src/compass/tests -q` — run the test suite.
 - `uv run python -c "import compass.core"` must stay fast and must not
   pull in Qt/OpenSlide/pyvips/cv2/h5py/AnnData (tested implicitly; keep

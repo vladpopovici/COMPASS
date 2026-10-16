@@ -41,8 +41,8 @@ class WSI(PyramidalRaster):
     """
 
     def __init__(self, path: str | pathlib.Path | PathLike):
-        self._path = path
-        self._slide = slide_src = osl.OpenSlide(path)
+        self._path = str(path)
+        self._slide = slide_src = osl.OpenSlide(self._path)
         # keep also full meta info:
         self._original_meta = slide_meta = slide_src.properties
         # rename some of the most important properties:
@@ -55,7 +55,7 @@ class WSI(PyramidalRaster):
             'n_levels': slide_src.level_count,  # no. of levels in pyramid
             'magnification_step': \
                 slide_src.level_downsamples[1] / slide_src.level_downsamples[0] if slide_src.level_count > 1 else 1.0,
-            'roi': dict(),
+            'roi': {},
             'background': 0xFF
         }
         # optional properties:
