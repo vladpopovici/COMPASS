@@ -39,7 +39,7 @@ OpenGL, libvips or OpenSlide are marked as such.
 | `compass.core` | `PyramidalRaster` protocol, Zarr raster backend, magnification math, vectorized SQLite/R-tree annotation reader | Ported, tested |
 | `compass.connector` | WSI ingestion (OpenSlide → pyvips → Zarr), OME-TIFF export | Ported; ingestion tested against stand-ins (no libvips/OpenSlide needed) |
 | `compass.processing` | Domain algorithms (tissue detection, stain normalization, sampling, registration, Visium) | Empty stub |
-| `compass.viewer` | psygnal state, tile grid/cache/fetcher, vispy tile-streaming canvas, `python -m compass.viewer` | Steps 1–3 of the build order (architecture §7). No annotation overlays or analysis panels yet |
+| `compass.viewer` | psygnal state, tile grid/cache/fetcher, vispy tile-streaming canvas, keyboard/mouse navigation, overview thumbnail, `python -m compass.viewer` | Steps 1–3 of the build order (architecture §7). No annotation overlays or analysis panels yet. Full guide: [`viewer.md`](viewer.md) |
 
 ## Dependency direction
 
@@ -867,9 +867,15 @@ from compass.viewer import ViewerState, TileGrid, TileCache, TileFetcher, TileKe
 from compass.viewer.canvas import SlideCanvas   # needs vispy + OpenGL
 ```
 
-The package `__init__` is GUI-free: state and tile machinery work (and are
-tested) without Qt or OpenGL. Only `compass.viewer.canvas` and
-`compass.viewer.app` touch vispy/Qt.
+The package `__init__` is GUI-free: state, tile machinery and navigation
+maths work (and are tested) without Qt or OpenGL. Only
+`compass.viewer.canvas`, `compass.viewer.inset` and `compass.viewer.app`
+touch vispy/Qt.
+
+This section is the API reference for the building blocks. The user guide
+(every key and mouse binding, the info bar, the thumbnail) and the
+internals (rendering pipeline, navigation model, testing, vispy pitfalls)
+are in [`viewer.md`](viewer.md).
 
 ## Running the viewer
 
@@ -885,7 +891,8 @@ uv run python -m compass.viewer slide.zarr [--tile-size 512] [--cache-mb 768] [-
 | `--workers` | 2 | Background tile-reader threads |
 | `-v` | off | Debug logging to stderr |
 
-Controls are vispy's `PanZoomCamera`: drag to pan, wheel to zoom.
+Drag to pan, wheel to zoom, `?` for all keys and mouse actions. The
+full list is in [`viewer.md`](viewer.md).
 
 ## `ViewerState` — shared reactive state
 
@@ -897,6 +904,9 @@ its own signal under `state.events.<field>`.
 | `viewport` | `(x0, y0, width, height)`, level-0 px | canvas |
 | `canvas_size` | `(width, height)`, device px | canvas |
 | `current_level` | `int` | canvas |
+| `cursor` | `(x, y)` level-0 px, or `None` | canvas |
+| `cursor_value` | `tuple[float, ...]` (one per channel), or `None` | canvas |
+| `cursor_value_level` | `int` or `None` | canvas |
 | `visible_groups` | `frozenset[int]` (group ids) | panels |
 | `selected_ids` | `frozenset[int]` (object ids) | panels |
 | `hovered_id` | `int` or `None` | panels |
@@ -1012,8 +1022,9 @@ Read errors are logged and don't stop the pool.
 
 ## `SlideCanvas` — the gigapixel canvas
 
-*Needs vispy, a Qt backend and OpenGL; not run while writing this
-document.*
+*Needs vispy, a Qt backend and OpenGL.* Navigation methods
+(`get_view`/`set_view`, `go_to`, `navigate`, `overview_visible`) are
+documented in [`viewer.md`](viewer.md), *Embedding `SlideCanvas`*.
 
 ```python
 SlideCanvas(raster, state=None, tile_size=512, cache_bytes=768 * 2**20,

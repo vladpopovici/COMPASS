@@ -2314,11 +2314,6 @@ vertical-align: -.125em;
 <section id="packages-and-status" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="packages-and-status"><span class="header-section-number">1.1</span> Packages and status</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Package</th>
@@ -2344,8 +2339,8 @@ vertical-align: -.125em;
 </tr>
 <tr class="even">
 <td><code>compass.viewer</code></td>
-<td>psygnal state, tile grid/cache/fetcher, vispy tile-streaming canvas, <code>python -m compass.viewer</code></td>
-<td>Steps 1–3 of the build order (architecture §7). No annotation overlays or analysis panels yet</td>
+<td>psygnal state, tile grid/cache/fetcher, vispy tile-streaming canvas, keyboard/mouse navigation, overview thumbnail, <code>python -m compass.viewer</code></td>
+<td>Steps 1–3 of the build order (architecture §7). No annotation overlays or analysis panels yet. Full guide: <a href="viewer.md"><code>viewer.md</code></a></td>
 </tr>
 </tbody>
 </table>
@@ -3091,7 +3086,8 @@ object_id
 <h1 data-number="8"><span class="header-section-number">8</span> <code>compass.viewer</code></h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState, TileGrid, TileCache, TileFetcher, TileKey</span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer.canvas <span class="im">import</span> SlideCanvas   <span class="co"># needs vispy + OpenGL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The package <code>__init__</code> is GUI-free: state and tile machinery work (and are tested) without Qt or OpenGL. Only <code>compass.viewer.canvas</code> and <code>compass.viewer.app</code> touch vispy/Qt.</p>
+<p>The package <code>__init__</code> is GUI-free: state, tile machinery and navigation maths work (and are tested) without Qt or OpenGL. Only <code>compass.viewer.canvas</code>, <code>compass.viewer.inset</code> and <code>compass.viewer.app</code> touch vispy/Qt.</p>
+<p>This section is the API reference for the building blocks. The user guide (every key and mouse binding, the info bar, the thumbnail) and the internals (rendering pipeline, navigation model, testing, vispy pitfalls) are in <a href="viewer.md"><code>viewer.md</code></a>.</p>
 <section id="running-the-viewer" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="running-the-viewer"><span class="header-section-number">8.1</span> Running the viewer</h2>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--extra</span> viewer</span>
@@ -3132,12 +3128,17 @@ object_id
 </tr>
 </tbody>
 </table>
-<p>Controls are vispy’s <code>PanZoomCamera</code>: drag to pan, wheel to zoom.</p>
+<p>Drag to pan, wheel to zoom, <code>?</code> for all keys and mouse actions. The full list is in <a href="viewer.md"><code>viewer.md</code></a>.</p>
 </section>
 <section id="viewerstate-shared-reactive-state" class="level2" data-number="8.2">
 <h2 data-number="8.2" class="anchored" data-anchor-id="viewerstate-shared-reactive-state"><span class="header-section-number">8.2</span> <code>ViewerState</code> — shared reactive state</h2>
 <p>A psygnal <code>EventedModel</code> that every panel reads and writes; each field has its own signal under <code>state.events.&lt;field&gt;</code>.</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Field</th>
@@ -3162,16 +3163,31 @@ object_id
 <td>canvas</td>
 </tr>
 <tr class="even">
+<td><code>cursor</code></td>
+<td><code>(x, y)</code> level-0 px, or <code>None</code></td>
+<td>canvas</td>
+</tr>
+<tr class="odd">
+<td><code>cursor_value</code></td>
+<td><code>tuple[float, ...]</code> (one per channel), or <code>None</code></td>
+<td>canvas</td>
+</tr>
+<tr class="even">
+<td><code>cursor_value_level</code></td>
+<td><code>int</code> or <code>None</code></td>
+<td>canvas</td>
+</tr>
+<tr class="odd">
 <td><code>visible_groups</code></td>
 <td><code>frozenset[int]</code> (group ids)</td>
 <td>panels</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>selected_ids</code></td>
 <td><code>frozenset[int]</code> (object ids)</td>
 <td>panels</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>hovered_id</code></td>
 <td><code>int</code> or <code>None</code></td>
 <td>panels</td>
@@ -3253,7 +3269,7 @@ object_id
 </section>
 <section id="slidecanvas-the-gigapixel-canvas" class="level2" data-number="8.6">
 <h2 data-number="8.6" class="anchored" data-anchor-id="slidecanvas-the-gigapixel-canvas"><span class="header-section-number">8.6</span> <code>SlideCanvas</code> — the gigapixel canvas</h2>
-<p><em>Needs vispy, a Qt backend and OpenGL; not run while writing this document.</em></p>
+<p><em>Needs vispy, a Qt backend and OpenGL.</em> Navigation methods (<code>get_view</code>/<code>set_view</code>, <code>go_to</code>, <code>navigate</code>, <code>overview_visible</code>) are documented in <a href="viewer.md"><code>viewer.md</code></a>, <em>Embedding <code>SlideCanvas</code></em>.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>SlideCanvas(raster, state<span class="op">=</span><span class="va">None</span>, tile_size<span class="op">=</span><span class="dv">512</span>, cache_bytes<span class="op">=</span><span class="dv">768</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>,</span>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>            prefetch_margin<span class="op">=</span><span class="dv">1</span>, max_workers<span class="op">=</span><span class="dv">2</span>, <span class="op">**</span>vispy_canvas_kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
