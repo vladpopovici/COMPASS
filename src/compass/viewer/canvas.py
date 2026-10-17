@@ -45,6 +45,26 @@ from .tiling import TileCache, TileGrid, TileKey
 
 
 #####
+class _NotifyingPanZoomCamera(scene.PanZoomCamera):
+    """PanZoomCamera that calls ``on_change()`` after every view change.
+
+    Needed because the obvious hook, the subscene node's
+    ``transform_change`` event, fires only once: PanZoomCamera mutates the
+    same ``MatrixTransform`` in place, and ``Node.transform`` ignores
+    re-assignment of the identical object. ``view_changed`` is the
+    camera's own per-pan/zoom/resize entry point.
+    """
+
+    on_change = None  # class attr so it can be set on the frozen node
+
+    def view_changed(self):
+        super().view_changed()
+        if self.on_change is not None:
+            self.on_change()
+##
+
+
+#####
 class SlideCanvas(scene.SceneCanvas):
     """vispy canvas showing one pyramidal raster with pan/zoom tile
     streaming. Embed in Qt via the ``.native`` widget.
@@ -91,7 +111,7 @@ class SlideCanvas(scene.SceneCanvas):
 
         # --- scene graph ---
         self._view = self.central_widget.add_view()
-        camera = scene.PanZoomCamera(aspect=1)
+        camera = _NotifyingPanZoomCamera(aspect=1)
         camera.flip = (False, True, False)  # y down, like image coordinates
         self._view.camera = camera
 
@@ -99,11 +119,9 @@ class SlideCanvas(scene.SceneCanvas):
         self._overview = self._make_overview()
         camera.set_range(x=(0, w0), y=(0, h0), margin=0.02)
 
-        # pan/zoom hook: the camera reassigns the subscene's transform on
-        # every move, so that node's transform_change is the reliable signal
-        # (the camera's own node transform never changes)
-        self._view.scene.events.transform_change.connect(self._on_view_change)
-        self.events.resize.connect(self._on_view_change)
+        # pan/zoom/resize hook (see _NotifyingPanZoomCamera for why not
+        # transform_change); connected only after the scene graph is built
+        camera.on_change = self._on_view_change
 
         # tiles decoded on worker threads land on the GUI thread here
         self._drain_timer = Timer(interval=1 / 30,
@@ -200,6 +218,7 @@ class SlideCanvas(scene.SceneCanvas):
         d = self._grid.downsample(key.level)
         x0, y0, _, _ = self._grid.tile_bounds_level0(key)
         im.transform = STTransform(scale=(d, d, 1), translate=(x0, y0, 0))
+        _layer_by_order(im)
         im.order = -key.level  # coarse below fine
         self._visuals[key] = im
 
@@ -222,6 +241,20 @@ class SlideCanvas(scene.SceneCanvas):
                                  interpolation="linear")
         d = self._grid.downsample(level)
         im.transform = STTransform(scale=(d, d, 1))
+        _layer_by_order(im)
         im.order = -1000
         return im
+##
+
+
+def _layer_by_order(visual) -> None:
+    """Stack a visual purely by draw order (``visual.order``).
+
+    vispy's Image uses the 'translucent' GL preset, which has depth testing
+    on; all slide layers sit at z=0, so with the default 'less' depth test
+    the first-drawn layer (the coarse overview) wins and every finer tile
+    drawn later is discarded — the screen shows the upscaled overview no
+    matter which level was loaded.
+    """
+    visual.set_gl_state("translucent", depth_test=False, cull_face=False)
 ##

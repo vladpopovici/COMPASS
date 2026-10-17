@@ -42,9 +42,14 @@ calibration, box-averaged levels built from Zarr, no temp files),
 steps 1-3 of architecture section 7 (psygnal ViewerState, headless tile
 grid/LRU cache/threaded fetcher, vispy SlideCanvas with pan/zoom +
 level-switching tile streaming, `python -m compass.viewer slide.zarr`
-entry point; PySide6, LGPL — not PyQt/GPL). The vispy/Qt layer cannot
-run or even import on this machine (no libGL) — it is compile-checked
-only; run it on a machine with OpenGL via `uv sync --extra viewer`.
+entry point; PySide6, LGPL — not PyQt/GPL). The vispy/Qt layer runs on
+this machine (Mesa libGL/EGL, X display `:0`) via `uv sync --extra viewer`.
+To check rendering without manual interaction, drive a `SlideCanvas`
+from a script (`canvas.view.camera.zoom(...)`, pump
+`QApplication.processEvents()`, then `canvas.render()` -> PNG). This
+briefly opens a window on the user's display. With
+`QT_QPA_PLATFORM=offscreen`, tile/level logic still runs but nothing is
+drawn.
 `processing/` has `tissue.py` (`detect_foreground`, five methods, +
 `foreground_bbox`; used by `src/tools/wsi_import.py --crop=detect`) and
 `stain.py` (only `rgb2he` so far); the rest is still to be ported. See @docs/architecture.md for
