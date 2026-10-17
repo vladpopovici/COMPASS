@@ -64,7 +64,7 @@ def is_ome_tiff(path: Path) -> bool:
     name = path.name.lower()
     if name.endswith(OME_SUFFIXES):
         return True
-    if not (name.endswith(".tif") or name.endswith(".tiff")):
+    if not name.endswith((".tif", ".tiff")):
         return False
     try:
         import tifffile
@@ -87,7 +87,7 @@ def default_dst(src: Path) -> Path:
     return src.parent / f"{name}.zarr"
 
 
-def _ovan(args: argparse.Namespace) -> tuple[int, int, int, int] | bool:
+def _resolve_autocrop(args: argparse.Namespace) -> tuple[int, int, int, int] | bool:
     """Resolve --auto-crop/--crop against the target format."""
     if args.crop is not None:
         return tuple(args.crop)
@@ -230,7 +230,7 @@ def _print_info(args) -> None:
         info = dict(WSI(args.src).info)
         info["channels"] = ["R", "G", "B"]
         print("metadata:", info)
-    crop = _ovan(args)
+    crop = _resolve_autocrop(args)
     x0, y0, w, h = (0, 0, width, height) if crop is False else (
         crop if crop is not True else (0, 0, width, height))
     levels = plan_levels(w, h, x0, y0,
@@ -260,12 +260,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     logger.info("wsi_import: %s [%s] -> %s", args.src, args.format, args.dst)
-    kwargs = dict(crop=_ovan(args),
-                  downscale_factor=args.downscale_factor,
-                  min_size=args.min_size,
-                  chunk_size=args.chunk_size,
-                  shard_factor=args.shard_factor,
-                  overwrite=args.overwrite)
+    kwargs = {'crop': _resolve_autocrop(args),
+        'downscale_factor': args.downscale_factor,
+        'min_size': args.min_size,
+        'chunk_size': args.chunk_size,
+        'shard_factor': args.shard_factor,
+        'overwrite': args.overwrite}
     try:
         if args.format == "ometiff":
             ometiff2zarr(args.src, args.dst,

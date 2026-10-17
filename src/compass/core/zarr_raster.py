@@ -15,6 +15,7 @@ import dask.array as da
 import numpy as np
 import zarr
 from zarr.codecs import BloscCodec
+from zarr.codecs.blosc import BloscShuffle
 
 from .magnif import Magnification
 from .pyramid import PyramidalRaster
@@ -255,7 +256,8 @@ def create_level_array(root: zarr.Group, level: int,
                              dtype=dtype,
                              chunks=chunks,
                              shards=shards,
-                             compressors=BloscCodec(cname="zstd", clevel=3, shuffle="shuffle"))
+                             compressors=BloscCodec(cname="zstd", clevel=5, shuffle="bitshuffle"),
+                             fill_value=255)
 
 
 def write_pyramid_attrs(root: zarr.Group, nlevels: int,
