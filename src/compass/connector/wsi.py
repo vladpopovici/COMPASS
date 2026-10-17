@@ -129,5 +129,27 @@ class WSI(PyramidalRaster):
 
         return img.astype(as_type)
 
+    def get_overview(self, min_size: int = 2048) -> np.ndarray:
+        """Read a whole pyramid level as a low-resolution overview of the
+        slide: the coarsest stored level whose longer edge is at least
+        ``min_size`` (level 0 if none is that large).
+
+        Uses OpenSlide's own level dimensions, so the overview spans exactly
+        the level-0 extent: scale by ``width / overview.shape[1]`` (resp.
+        heights) to map its pixels back to level 0. Transparent (unscanned)
+        pixels are filled with the slide background colour.
+
+        Returns:
+            H x W x 3 uint8 RGB array.
+        """
+        dims = self._slide.level_dimensions
+        level = next((lv for lv in reversed(range(len(dims)))
+                      if max(dims[lv]) >= min_size), 0)
+        img = np.array(self._slide.read_region((0, 0), level, dims[level]))
+        if img.shape[2] == 4:
+            img[img[..., -1] == 0, 0:3] = self.info['background']
+            img = img[..., 0:3]
+        return np.ascontiguousarray(img)
+
 
 ####

@@ -45,7 +45,9 @@ level-switching tile streaming, `python -m compass.viewer slide.zarr`
 entry point; PySide6, LGPL — not PyQt/GPL). The vispy/Qt layer cannot
 run or even import on this machine (no libGL) — it is compile-checked
 only; run it on a machine with OpenGL via `uv sync --extra viewer`.
-`processing/` is still a scaffolded stub. See @docs/architecture.md for
+`processing/` has `tissue.py` (`detect_foreground`, five methods, +
+`foreground_bbox`; used by `src/tools/wsi_import.py --crop=detect`) and
+`stain.py` (only `rgb2he` so far); the rest is still to be ported. See @docs/architecture.md for
 the legacy-module -> target mapping and what changes on the way.
 
 ## Hard constraints (do not relitigate without asking)

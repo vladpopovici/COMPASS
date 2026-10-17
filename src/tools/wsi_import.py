@@ -29,6 +29,9 @@ Examples
     # explicit destination; crop to the scanner scan-region
     uv run python src/tools/wsi_import.py slide.mrxs out/slide.zarr --auto-crop
 
+    # crop to the bounding box of the detected tissue (H&E)
+    uv run python src/tools/wsi_import.py slide.ndpi --crop=detect
+
     # OME-TIFF without NominalMagnification in its OME-XML
     uv run python src/tools/wsi_import.py cytx.ome.tif --objective-power 40
 
@@ -43,6 +46,8 @@ import logging
 import sys
 from pathlib import Path
 
+import numpy as np
+
 from compass.connector import ometiff2zarr, plan_levels, wsi2zarr
 
 logger = logging.getLogger("wsi_import")
@@ -52,6 +57,15 @@ OME_SUFFIXES = (".ome.tif", ".ome.tiff")
 CONNECTOR_HINT = ("WSI conversion needs OpenSlide and libvips on the system "
                   "and `uv sync --extra connector`; see docs/architecture.md "
                   "section 3.")
+
+# --crop detect: tissue is detected on an overview whose longer edge is at
+# least this many pixels, and the bounding box is padded by this many
+# overview pixels on each side (absorbs the down-sampling rounding).
+# Components below DETECT_MIN_FRACTION of the largest one (dust, debris)
+# do not count towards the bounding box.
+DETECT_SIZE = 2048
+DETECT_MARGIN = 2
+DETECT_MIN_FRACTION = 0.01
 
 
 def is_ome_tiff(path: Path) -> bool:
@@ -87,8 +101,81 @@ def default_dst(src: Path) -> Path:
     return src.parent / f"{name}.zarr"
 
 
+def _select_series(tif) -> int:
+    """Default OME-TIFF series: the largest one (as ``ometiff2zarr``)."""
+    return max(range(len(tif.series)), key=lambda k: tif.series[k].size)
+
+
+def _overview(args: argparse.Namespace) -> tuple[np.ndarray, int, int]:
+    """Low-resolution RGB overview of the source image, plus the full
+    (width, height) at level 0 that it spans."""
+    if args.format == "ometiff":
+        import tifffile
+        import zarr
+        from compass.connector.ometiff import yxc_selection
+        with tifffile.TiffFile(args.src) as tif:
+            sr = tif.series[args.series if args.series is not None
+                            else _select_series(tif)]
+            iy, ix = sr.axes.index("Y"), sr.axes.index("X")
+            width, height = int(sr.shape[ix]), int(sr.shape[iy])
+            # coarsest stored level still >= DETECT_SIZE, then stride down
+            lv = next((k for k in reversed(range(len(sr.levels)))
+                       if max(sr.levels[k].shape[iy], sr.levels[k].shape[ix])
+                       >= DETECT_SIZE), 0)
+            shape = sr.levels[lv].shape
+            index, perm, nchannels = yxc_selection(
+                sr.axes, shape,
+                {ax: v for ax, v in (("Z", args.z), ("T", args.t)) if v is not None})
+            if nchannels != 3 or sr.dtype != np.uint8:
+                raise SystemExit("wsi_import: --crop detect needs an RGB uint8 "
+                                 f"image; this series is {nchannels}-channel "
+                                 f"{sr.dtype}")
+            step = max(1, max(shape[iy], shape[ix]) // DETECT_SIZE)
+            index[iy] = index[ix] = slice(None, None, step)
+            src = zarr.open(sr.aszarr(level=lv), mode="r")
+            img = np.transpose(src[tuple(index)], perm)
+        return np.ascontiguousarray(img), width, height
+
+    try:
+        from compass.connector.wsi import WSI
+    except ImportError as e:
+        raise SystemExit(f"wsi_import: {e}\n{CONNECTOR_HINT}") from e
+    wsi = WSI(args.src)
+    return (wsi.get_overview(DETECT_SIZE),
+            int(wsi.info["width"]), int(wsi.info["height"]))
+
+
+def _detect_crop(args: argparse.Namespace) -> tuple[int, int, int, int]:
+    """Crop region (x0, y0, w, h) at level 0: bounding box of the tissue
+    detected by ``detect_foreground(method="simple-he")`` on an overview."""
+    try:
+        from compass.processing.tissue import detect_foreground, foreground_bbox
+    except ImportError as e:
+        raise SystemExit(f"wsi_import: {e}\n--crop detect needs "
+                         "`uv sync --extra processing`.") from e
+
+    img, width, height = _overview(args)
+    mask, g_th = detect_foreground(img, method="simple-he")
+    bbox = foreground_bbox(mask, min_fraction=DETECT_MIN_FRACTION)
+    if bbox is None:
+        raise SystemExit("wsi_import: --crop detect found no tissue")
+
+    sx, sy = width / img.shape[1], height / img.shape[0]
+    bx, by, bw, bh = bbox
+    x0 = max(0, int(np.floor((bx - DETECT_MARGIN) * sx)))
+    y0 = max(0, int(np.floor((by - DETECT_MARGIN) * sy)))
+    x1 = min(width, int(np.ceil((bx + bw + DETECT_MARGIN) * sx)))
+    y1 = min(height, int(np.ceil((by + bh + DETECT_MARGIN) * sy)))
+    logger.info("wsi_import: tissue detected on %d x %d overview (G threshold "
+                "%s) -> crop (%d, %d, %d, %d)", img.shape[1], img.shape[0],
+                g_th, x0, y0, x1 - x0, y1 - y0)
+    return x0, y0, x1 - x0, y1 - y0
+
+
 def _resolve_autocrop(args: argparse.Namespace) -> tuple[int, int, int, int] | bool:
     """Resolve --auto-crop/--crop against the target format."""
+    if args.crop == "detect":
+        return _detect_crop(args)
     if args.crop is not None:
         return tuple(args.crop)
     if args.auto_crop:
@@ -132,9 +219,10 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     crop = parser.add_mutually_exclusive_group()
     crop.add_argument("--auto-crop", action="store_true",
                       help="crop to the scanner scan-region ROI (WSI only)")
-    crop.add_argument("--crop", type=int, nargs=4,
-                      metavar=("X0", "Y0", "W", "H"),
-                      help="explicit crop at full resolution")
+    crop.add_argument("--crop", nargs="+", metavar="X0 Y0 W H | detect",
+                      help="explicit crop at full resolution, or 'detect' "
+                           "to crop to the bounding box of the tissue "
+                           "found by H&E foreground detection")
 
     ome = parser.add_argument_group("OME-TIFF options")
     ome.add_argument("--series", type=int, default=None,
@@ -164,6 +252,16 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
                         help="progress logging to stderr")
 
     args = parser.parse_args(argv)
+    if args.crop is not None:
+        if args.crop == ["detect"]:
+            args.crop = "detect"
+        else:
+            try:
+                args.crop = tuple(int(v) for v in args.crop)
+            except ValueError:
+                args.crop = ()
+            if len(args.crop) != 4:
+                parser.error("--crop takes X0 Y0 W H or 'detect'")
     if args.mpp is not None and len(args.mpp) not in (1, 2):
         parser.error("--mpp takes one value or two (MPP_X MPP_Y)")
     for flag in ("downscale_factor", "min_size", "chunk_size", "shard_factor"):
@@ -187,8 +285,7 @@ def _width_height(args) -> tuple[int, int]:
         with tifffile.TiffFile(args.src) as tif:
             series = args.series
             if series is None:
-                series = max(range(len(tif.series)),
-                             key=lambda k: tif.series[k].size)
+                series = _select_series(tif)
             sr = tif.series[series]
             return (int(sr.shape[sr.axes.index("X")]),
                     int(sr.shape[sr.axes.index("Y")]))
@@ -258,6 +355,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.info:
         _print_info(args)
         return 0
+
+    if args.dst.exists() and not args.overwrite:
+        print(f"wsi_import: destination already exists: {args.dst}\n"
+              "Remove it, choose another DST, or pass --overwrite.",
+              file=sys.stderr)
+        return 2
 
     logger.info("wsi_import: %s [%s] -> %s", args.src, args.format, args.dst)
     kwargs = {'crop': _resolve_autocrop(args),
