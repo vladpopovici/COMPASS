@@ -49,7 +49,14 @@ from a script (`canvas.view.camera.zoom(...)`, pump
 `QApplication.processEvents()`, then `canvas.render()` -> PNG). This
 briefly opens a window on the user's display. With
 `QT_QPA_PLATFORM=offscreen`, tile/level logic still runs but nothing is
-drawn.
+drawn. Navigation: view maths, key map and history in
+`viewer/navigation.py` (headless-tested); mouse handling in
+`SlideCanvas` (vispy's camera has its key and mouse bindings disabled
+except pinch); overview thumbnail in `viewer/inset.py`; app keys
+(quit/fullscreen/info/help) as `QAction`s in `viewer/app.py`. To test
+input, send real X events (XTEST via
+`uv run --extra viewer --with python-xlib ...`); `QTest.keyClick` skips
+window shortcuts and focus, so its results are misleading here.
 `processing/` has `tissue.py` (`detect_foreground`, five methods, +
 `foreground_bbox`; used by `src/tools/wsi_import.py --crop=detect`) and
 `stain.py` (only `rgb2he` so far); the rest is still to be ported. See @docs/architecture.md for

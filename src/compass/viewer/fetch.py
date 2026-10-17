@@ -73,7 +73,8 @@ class TileFetcher:
             arr = self._read_tile(key)
             self._on_tile(key, arr)
         except Exception:
-            logger.exception("tile read failed: %s", key)
+            if not self._closed:  # reads cut off by shutdown are expected
+                logger.exception("tile read failed: %s", key)
         finally:
             with self._lock:
                 self._inflight.pop(key, None)

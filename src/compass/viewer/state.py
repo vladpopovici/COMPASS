@@ -40,6 +40,13 @@ class ViewerState(EventedModel):
     visible_groups: frozenset[int] = frozenset()
     #: currently selected annotation object_ids
     selected_ids: frozenset[int] = frozenset()
+    #: mouse position over the canvas, level-0 pixels (None: not yet seen)
+    cursor: tuple[float, float] | None = None
+    #: pixel value under the cursor (one entry per channel), read from the
+    #: finest loaded tile there; None when nothing is loaded at the cursor
+    cursor_value: tuple[float, ...] | None = None
+    #: pyramid level ``cursor_value`` was read from
+    cursor_value_level: int | None = None
     #: annotation object under the cursor, if any
     hovered_id: int | None = None
 
