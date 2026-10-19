@@ -55,6 +55,9 @@ class WSI(PyramidalRaster):
             'n_levels': slide_src.level_count,  # no. of levels in pyramid
             'magnification_step': \
                 slide_src.level_downsamples[1] / slide_src.level_downsamples[0] if slide_src.level_count > 1 else 1.0,
+            # as stored by the scanner, relative to level 0 (not always exact
+            # powers of magnification_step)
+            'level_downsamples': [float(d) for d in slide_src.level_downsamples],
             'roi': {},
             'background': 0xFF
         }

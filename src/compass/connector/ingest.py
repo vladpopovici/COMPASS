@@ -27,6 +27,8 @@ them) so the pure planning helpers remain importable without them.
 
 import logging
 import tempfile
+from copy import deepcopy
+from datetime import datetime
 from math import floor
 from os import PathLike
 from pathlib import Path
@@ -35,7 +37,7 @@ from typing import Callable
 import numpy as np
 import zarr
 
-from ..core.zarr_raster import create_level_array, write_pyramid_attrs
+from ..core.zarr_raster import FORMAT_VERSION, create_level_array, write_pyramid_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,184 @@ def plan_levels(width: int, height: int,
     return levels
 
 
+#: controlled vocabulary for ``import_record(...)["transform"]["type"]``
+TRANSFORM_TYPES = ("shift", "rotate", "scale", "affine")
+#: version of the import record layout (bump on incompatible changes)
+IMPORT_RECORD_VERSION = 1
+#: OME-TIFF start-level reads: source pixels per side of one sub-read
+_BASE_READ_EDGE = 2048
+
+
+def plan_import(width: int, height: int,
+                crop: tuple[int, int, int, int],
+                start_level: int = 0,
+                downscale_factor: int = 2,
+                min_size: int = 256) -> dict:
+    """Plan an import that starts at level ``start_level`` of the pyramid
+    :func:`plan_levels` would build for ``crop``.
+
+    Level ``start_level`` of that plan becomes the new level 0, so the
+    result has ``start_level`` fewer levels. The crop is snapped to the
+    start level's pixel grid, which keeps the mapping from source to output
+    coordinates exact: ``x_out = (x_src - crop_x0) / downsample``.
+
+    Args:
+        width, height: source extent at level 0 (for validation only).
+        crop: (x0, y0, w, h) at source level 0, already clamped
+            (see :func:`resolve_crop`).
+        start_level: index into the planned pyramid.
+        downscale_factor, min_size: as in :func:`plan_levels`.
+
+    Returns:
+        dict with ``start_level``, ``downsample`` (source level-0 pixels
+        per output level-0 pixel), ``crop`` (effective x0, y0, w, h at
+        source level 0), ``requested_crop``, ``levels`` (output pyramid,
+        list of ``{'w', 'h'}``), ``planned`` (the full plan from source
+        level 0, list of ``{'w', 'h'}``).
+
+    Raises:
+        ValueError: ``start_level`` outside the planned pyramid.
+    """
+    x0, y0, w, h = (int(v) for v in crop)
+    if not (0 <= x0 and 0 <= y0 and x0 + w <= width and y0 + h <= height):
+        raise ValueError(f"crop {crop} outside the {width} x {height} image")
+    full = plan_levels(w, h, x0, y0, downscale_factor, min_size)
+    if not 0 <= start_level < len(full):
+        raise ValueError(f"start level {start_level} not in the planned pyramid "
+                         f"(levels 0..{len(full) - 1})")
+    d = int(downscale_factor) ** int(start_level)
+    base = full[start_level]
+    return {
+        "start_level": int(start_level),
+        "downsample": d,
+        "crop": (base["x0"] * d, base["y0"] * d, base["w"] * d, base["h"] * d),
+        "requested_crop": (x0, y0, w, h),
+        "levels": [{"w": lv["w"], "h": lv["h"]} for lv in full[start_level:]],
+        "planned": [{"w": lv["w"], "h": lv["h"]} for lv in full],
+    }
+
+
+def closest_level_for_mpp(mpp0: float, target_mpp: float,
+                          nlevels: int, downscale_factor: int = 2) -> int:
+    """Level of a planned pyramid (level k has ``mpp0 * factor**k``)
+    closest to ``target_mpp``, compared by ratio; ties go to the finer
+    level."""
+    if mpp0 <= 0 or target_mpp <= 0:
+        raise ValueError("mpp values must be positive")
+    errs = [abs(np.log(mpp0 * downscale_factor ** k / target_mpp))
+            for k in range(nlevels)]
+    best = min(errs)
+    return next(k for k, e in enumerate(errs) if e <= best + 1e-12)
+
+
+def crop_scale_transform(x0: float, y0: float, downsample: float) -> dict:
+    """Transform from source level-0 to output level-0 pixel coordinates
+    for a crop at (x0, y0) followed by a ``downsample`` reduction:
+    ``x_out = (x_src - x0) / downsample`` (same for y).
+
+    ``type`` is the most specific of :data:`TRANSFORM_TYPES` that
+    describes it (``shift``: dx, dy; ``scale``: sx, sy; ``affine``:
+    matrix only). ``matrix`` (2 x 3, row-major, applied to (x, y, 1)) is
+    always present, so consumers may ignore ``type``.
+    """
+    s = 1.0 / downsample
+    matrix = [[s, 0.0, -x0 * s], [0.0, s, -y0 * s]]
+    if downsample == 1:
+        params = {"type": "shift", "dx": -float(x0), "dy": -float(y0)}
+    elif x0 == 0 and y0 == 0:
+        params = {"type": "scale", "sx": s, "sy": s}
+    else:
+        params = {"type": "affine"}
+    return {**params, "from": "source_level0", "to": "output_level0",
+            "matrix": matrix}
+
+
+def _deep_update(base: dict, extra: dict) -> dict:
+    for k, v in extra.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            _deep_update(base[k], v)
+        else:
+            base[k] = v
+    return base
+
+
+def import_record(*,
+                  src_path: str | Path | PathLike,
+                  src_format: str,
+                  source: dict,
+                  crop_mode: str,
+                  plan: dict,
+                  dst_path: str | Path | PathLike,
+                  downscale_factor: int,
+                  chunk_size: int,
+                  shard_factor: int,
+                  provenance: dict | None = None) -> dict:
+    """Describe an import (JSON-serializable): source, crop at source level
+    0, start level, output pyramid and the source -> output coordinate
+    transform. Written to the store as the ``import`` group attribute.
+
+    Args:
+        source: source facts: ``width``, ``height``, ``mpp_x``, ``mpp_y``,
+            ``objective_power`` (calibration may be None), plus any extras
+            (e.g. OME ``series``, ``z``, ``t``).
+        crop_mode: how the crop was chosen ("none", "roi", "explicit", or a
+            caller's own, e.g. "detect").
+        plan: result of :func:`plan_import`.
+        provenance: merged (recursively) into the record last, e.g.
+            ``{"tool": "wsi_import", "crop": {"mode": "detect"}}``.
+    """
+    d = plan["downsample"]
+    x0, y0, w, h = plan["crop"]
+    rx0, ry0, rw, rh = plan["requested_crop"]
+    scale = lambda v, f: None if v is None else float(v) * f
+    src_path = Path(src_path).resolve()
+    record = {
+        "record_version": IMPORT_RECORD_VERSION,
+        "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "source": {"path": str(src_path), "name": src_path.name,
+                   "format": src_format, **source},
+        "crop": {"mode": crop_mode, "x0": x0, "y0": y0, "width": w, "height": h,
+                 "requested": {"x0": rx0, "y0": ry0, "width": rw, "height": rh}},
+        "start": {"level": plan["start_level"], "downsample": d,
+                  "mpp_x": scale(source.get("mpp_x"), d),
+                  "mpp_y": scale(source.get("mpp_y"), d)},
+        "output": {"path": str(Path(dst_path).resolve()),
+                   "format_version": FORMAT_VERSION,
+                   "levels": len(plan["levels"]),
+                   "width": plan["levels"][0]["w"], "height": plan["levels"][0]["h"],
+                   "mpp_x": scale(source.get("mpp_x"), d),
+                   "mpp_y": scale(source.get("mpp_y"), d),
+                   "objective_power": scale(source.get("objective_power"), 1.0 / d),
+                   "downscale_factor": int(downscale_factor),
+                   "chunk_size": int(chunk_size), "shard_factor": int(shard_factor),
+                   "level_shapes": [[lv["w"], lv["h"]] for lv in plan["levels"]]},
+        "transform": crop_scale_transform(x0, y0, d),
+    }
+    if provenance:
+        _deep_update(record, deepcopy(provenance))
+    return record
+
+
+def _crop_mode(crop, roi: dict) -> str:
+    if isinstance(crop, bool):
+        return "roi" if crop and roi else "none"
+    return "explicit"
+
+
+def _pick_source_level(downsamples: list[float], d: int) -> tuple[int, int]:
+    """Stored slide level to read for an output downsample ``d``: the
+    coarsest one whose downsample divides ``d`` (to 0.1 %), and the integer
+    reduction ``r`` still needed from it. Level 0 always qualifies."""
+    best = (0, d)
+    for k, ds in enumerate(downsamples):
+        if ds <= 0 or ds > d * (1 + 1e-3):
+            continue
+        r = d / ds
+        if abs(r - round(r)) < 1e-3 * r and ds >= downsamples[best[0]]:
+            best = (k, int(round(r)))
+    return best
+
+
 def _fill_by_shards(arr: zarr.Array,
                     read_block: Callable[[int, int, int, int], np.ndarray]) -> None:
     """Fill ``arr`` one whole shard per write: ``read_block(x, y, w, h)``
@@ -133,7 +313,9 @@ def wsi2zarr(
         shard_factor: int = 8,
         tmp_dir: str | Path | PathLike | None = None,
         overwrite: bool = False,
-) -> None:
+        start_level: int = 0,
+        provenance: dict | None = None,
+) -> dict:
     """Convert a WSI file to the canonical pyramidal Zarr v3 (sharded)
     format. Highest resolution is level ``"0"``.
 
@@ -160,6 +342,14 @@ def wsi2zarr(
         until RAM runs out. Avoid a RAM-backed ``/tmp`` (tmpfs) — the
         intermediates are slide-sized.
     :param overwrite: overwrite an existing store at ``dst_path``.
+    :param start_level: start at this level of the planned pyramid (see
+        :func:`plan_import`): it becomes level 0, calibration is scaled
+        accordingly. The base image is read from the coarsest stored slide
+        level that divides the needed downsample, so full resolution is
+        not read when the scanner stored that level.
+    :param provenance: extra fields merged into the import record.
+    :return: the import record (:func:`import_record`), also stored as the
+        group attribute ``"import"``.
     """
     # Order matters: openslide (wheel-bundled libopenslide.so.1, 4.x) must be
     # loaded before pyvips. libvips' openslide module drags in the system
@@ -176,21 +366,35 @@ def wsi2zarr(
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     wsi = WSI(wsi_path)
-    x0, y0, width, height = resolve_crop(
-        wsi.info["width"], wsi.info["height"], wsi.info["roi"], crop)
-    levels = plan_levels(width, height, x0, y0, downscale_factor, min_size)
-    nlevels = len(levels)
+    crop_xywh = resolve_crop(wsi.info["width"], wsi.info["height"],
+                             wsi.info["roi"], crop)
+    plan = plan_import(wsi.info["width"], wsi.info["height"], crop_xywh,
+                       start_level, downscale_factor, min_size)
+    nlevels = len(plan["levels"])
+    d = plan["downsample"]
+    ex0, ey0, ew, eh = plan["crop"]
+    bw, bh = plan["levels"][0]["w"], plan["levels"][0]["h"]
 
     logger.info("wsi2zarr: %d levels to generate (level 0 is just a copy)", nlevels)
 
     with tempfile.TemporaryDirectory(dir=tmp_dir) as tmp_path:
         tmp_path = Path(tmp_path)
 
-        logger.info("wsi2zarr: copy base level, crop (%d, %d, %d, %d)",
-                    levels[0]['x0'], levels[0]['y0'], levels[0]['w'], levels[0]['h'])
-        im = pyvips.Image.new_from_file(str(wsi_path), level=0, autocrop=False)
-        im = im.crop(levels[0]['x0'], levels[0]['y0'], levels[0]['w'], levels[0]['h'])
+        # base image: read the coarsest stored level that divides d, reduce
+        # the rest (r) with pyvips
+        src_level, r = _pick_source_level(
+            wsi.info.get("level_downsamples", [1.0]), d)
+        s = d // r  # stored level's downsample
+        logger.info("wsi2zarr: base level from slide level %d (x%d), crop "
+                    "(%d, %d, %d, %d) at level 0, reduce x%d",
+                    src_level, s, ex0, ey0, ew, eh, r)
+        im = pyvips.Image.new_from_file(str(wsi_path), level=src_level, autocrop=False)
+        im = im.crop(ex0 // s, ey0 // s, bw * r, bh * r)
         im = im.flatten(background=wsi.info['background'])
+        if r > 1:
+            im = im.resize(1.0 / r, gap=2.0)
+            if (im.width, im.height) != (bw, bh):  # resize rounding
+                im = im.crop(0, 0, min(bw, im.width), min(bh, im.height))
         im.write_to_file(str(tmp_path / "level0.v"))
 
         for level in range(1, nlevels):
@@ -210,12 +414,23 @@ def wsi2zarr(
             _fill_by_shards(arr, lambda x, y, w, h: im.crop(x, y, w, h).numpy())
 
         write_pyramid_attrs(root, nlevels,
-                            mpp_x=wsi.info['mpp_x'], mpp_y=wsi.info['mpp_y'],
-                            objective_power=wsi.info['objective_power'],
+                            mpp_x=wsi.info['mpp_x'] * d, mpp_y=wsi.info['mpp_y'] * d,
+                            objective_power=wsi.info['objective_power'] / d,
                             mag_step=downscale_factor,
                             channel_names=["R", "G", "B"])
 
+        record = import_record(
+            src_path=wsi_path, src_format="wsi",
+            source={k: wsi.info[k] for k in
+                    ("width", "height", "mpp_x", "mpp_y", "objective_power")},
+            crop_mode=_crop_mode(crop, wsi.info["roi"]), plan=plan,
+            dst_path=dst_path, downscale_factor=downscale_factor,
+            chunk_size=chunk_size, shard_factor=shard_factor,
+            provenance=provenance)
+        root.attrs["import"] = record
+
     logger.info("wsi2zarr: done")
+    return record
 ##
 
 
@@ -235,7 +450,9 @@ def ometiff2zarr(
         chunk_size: int = 512,
         shard_factor: int = 8,
         overwrite: bool = False,
-) -> None:
+        start_level: int = 0,
+        provenance: dict | None = None,
+) -> dict:
     """Convert an OME-TIFF file to the canonical pyramidal Zarr v3 (sharded)
     format. Highest resolution is level ``"0"``.
 
@@ -273,6 +490,12 @@ def ometiff2zarr(
     :param chunk_size: chunk edge (pixels); match the viewer's tile size.
     :param shard_factor: shard edge, in chunks.
     :param overwrite: overwrite an existing store at ``dst_path``.
+    :param start_level: start at this level of the planned pyramid (see
+        :func:`plan_import`); the base level is box-averaged from full
+        resolution while copying (reads the whole crop at full resolution).
+    :param provenance: extra fields merged into the import record.
+    :return: the import record (:func:`import_record`), also stored as the
+        group attribute ``"import"``.
     """
     import tifffile
 
@@ -326,25 +549,48 @@ def ometiff2zarr(
         if len(channel_names) != nchannels:
             raise ValueError(f"{len(channel_names)} channel names for {nchannels} channels")
 
-        x0, y0, width, height = resolve_crop(width, height, {}, crop)
-        levels = plan_levels(width, height, x0, y0, downscale_factor, min_size)
+        src_width, src_height = int(width), int(height)
+        plan = plan_import(src_width, src_height,
+                           resolve_crop(src_width, src_height, {}, crop),
+                           start_level, downscale_factor, min_size)
+        levels = plan["levels"]
         nlevels = len(levels)
+        d = plan["downsample"]
+        x0, y0, _, _ = plan["crop"]
+        width, height = levels[0]["w"], levels[0]["h"]
         logger.info("ometiff2zarr: series %d (%s %s, %s), %d levels to generate",
                     series, sr.axes, sr.shape, sr.dtype, nlevels)
 
         src = zarr.open(sr.aszarr(level=0), mode="r")
 
-        def read_base(x, y, w, h):
+        def read_src(x, y, w, h):
+            """(h, w, c) block at source level 0."""
             idx = list(index)
-            idx[iy] = slice(y0 + y, y0 + y + h)
-            idx[ix] = slice(x0 + x, x0 + x + w)
+            idx[iy] = slice(y, y + h)
+            idx[ix] = slice(x, x + w)
             block = np.transpose(src[tuple(idx)], perm)
             return block if block.ndim == 3 else block[..., np.newaxis]
 
+        def read_base(x, y, w, h):
+            """(h, w, c) block of the output level 0 at (x, y)."""
+            if d == 1:
+                return read_src(x0 + x, y0 + y, w, h)
+            # box-average d x d source pixels per output pixel, in sub-reads
+            # of ~_BASE_READ_EDGE source pixels to bound memory
+            out = np.empty((h, w, nchannels), dtype=sr.dtype)
+            t = max(1, _BASE_READ_EDGE // d)
+            for j in range(0, h, t):
+                th = min(t, h - j)
+                for i in range(0, w, t):
+                    tw = min(t, w - i)
+                    blk = read_src(x0 + (x + i) * d, y0 + (y + j) * d, tw * d, th * d)
+                    out[j:j + th, i:i + tw] = box_downsample(blk, d)
+            return out
+
         root = zarr.create_group(str(dst_path), overwrite=overwrite)
 
-        logger.info("ometiff2zarr: copy base level, crop (%d, %d, %d, %d)",
-                    x0, y0, width, height)
+        logger.info("ometiff2zarr: base level, crop (%d, %d, %d, %d) at level 0, "
+                    "reduce x%d", *plan["crop"], d)
         prev = create_level_array(root, 0, (height, width, nchannels), sr.dtype,
                                   chunk_size=chunk_size, shard_factor=shard_factor)
         _fill_by_shards(prev, read_base)
@@ -361,10 +607,24 @@ def ometiff2zarr(
         prev = arr
 
     write_pyramid_attrs(root, nlevels,
-                        mpp_x=mpp_x, mpp_y=mpp_y,
-                        objective_power=objective_power,
+                        mpp_x=mpp_x * d, mpp_y=mpp_y * d,
+                        objective_power=objective_power / d,
                         mag_step=downscale_factor,
                         channel_names=channel_names)
 
+    record = import_record(
+        src_path=src_path, src_format="ometiff",
+        source={"width": src_width, "height": src_height,
+                "mpp_x": float(mpp_x), "mpp_y": float(mpp_y),
+                "objective_power": float(objective_power),
+                "series": int(series), "z": z, "t": t,
+                "dtype": str(np.dtype(sr.dtype)), "channel_names": list(channel_names)},
+        crop_mode=_crop_mode(crop, {}), plan=plan,
+        dst_path=dst_path, downscale_factor=downscale_factor,
+        chunk_size=chunk_size, shard_factor=shard_factor,
+        provenance=provenance)
+    root.attrs["import"] = record
+
     logger.info("ometiff2zarr: done")
+    return record
 ##

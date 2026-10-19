@@ -37,18 +37,52 @@ Examples
 
     # inspect calibration and the pyramid that would be generated
     uv run python src/tools/wsi_import.py slide.mrxs --info
+
+    # import from planned level 2 on (4x coarser than full resolution)
+    uv run python src/tools/wsi_import.py slide.ndpi --start-level 2
+
+    # import from the level closest to 1 um/px, keep a record of the import
+    uv run python src/tools/wsi_import.py slide.ndpi --start-mpp 1.0 \
+        --crop=detect --show-meta > slide.import.json
+
+    # the same record as shell variables (dry run: nothing is written)
+    eval "$(uv run python src/tools/wsi_import.py slide.ndpi --start-mpp 1.0 \
+        --info --show-meta --meta-format kv)"
+    echo "$CROP_X0 $CROP_Y0 $START_DOWNSAMPLE $TRANSFORM_TYPE"
+
+Import record
+-------------
+Every conversion stores a record of the import as the ``import`` attribute
+of the Zarr group (``ZarrRaster(dst).info["import"]``); ``--show-meta``
+also prints it on stdout (and moves all other output to stderr). It holds
+the source path/name/format/size/calibration, the crop at *source* level
+0 (full extent if none, with how it was chosen), the start level and its
+downsample, the output pyramid (size, calibration, levels) and the
+source -> output pixel transform, with ``type`` one of shift, rotate,
+scale, affine and a 2x3 ``matrix`` always present:
+``x_out = (x_src - crop_x0) / downsample``.
+
+Formats: ``json`` (default, one object) or ``kv``: one shell-quoted
+``KEY=value`` per line, keys are the upper-cased JSON paths joined by ``_``
+(``CROP_X0``, ``OUTPUT_MPP_X``, ``TRANSFORM_TYPE``), lists are
+space-separated, null is empty — safe to ``eval`` in sh/bash.
 """
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
 import argparse
+import json
 import logging
+import re
+import shlex
 import sys
 from pathlib import Path
 
 import numpy as np
 
-from compass.connector import ometiff2zarr, plan_levels, wsi2zarr
+from compass.connector import (closest_level_for_mpp, import_record,
+                               ometiff2zarr, plan_import, plan_levels,
+                               resolve_crop, wsi2zarr)
 
 logger = logging.getLogger("wsi_import")
 
@@ -186,6 +220,109 @@ def _resolve_autocrop(args: argparse.Namespace) -> tuple[int, int, int, int] | b
     return False
 
 
+def _crop_mode(args: argparse.Namespace, roi: dict) -> str:
+    if args.crop == "detect":
+        return "detect"
+    if args.crop is not None:
+        return "explicit"
+    return "roi" if args.auto_crop and args.format == "wsi" and roi else "none"
+
+
+def _source_meta(args: argparse.Namespace) -> dict:
+    """Source facts: width, height, mpp_x, mpp_y, objective_power (None
+    when unknown and not given on the command line) and the scan ROI."""
+    if args.format == "ometiff":
+        import tifffile
+        from compass.connector.ometiff import read_ome_metadata
+        with tifffile.TiffFile(args.src) as tif:
+            series = args.series if args.series is not None else _select_series(tif)
+            sr = tif.series[series]
+            meta = (read_ome_metadata(tif.ome_metadata, series) if tif.is_ome
+                    else {"mpp_x": None, "mpp_y": None, "objective_power": None})
+            width = int(sr.shape[sr.axes.index("X")])
+            height = int(sr.shape[sr.axes.index("Y")])
+        mpp = _mpp_arg(args)
+        if mpp is not None:
+            mpp_x, mpp_y = (mpp, mpp) if np.isscalar(mpp) else mpp
+        else:
+            mpp_x = meta["mpp_x"] if meta["mpp_x"] is not None else meta["mpp_y"]
+            mpp_y = meta["mpp_y"] if meta["mpp_y"] is not None else meta["mpp_x"]
+        obj = (args.objective_power if args.objective_power is not None
+               else meta["objective_power"])
+        return {"width": width, "height": height, "mpp_x": mpp_x, "mpp_y": mpp_y,
+                "objective_power": obj, "roi": {}, "series": series,
+                "z": args.z, "t": args.t}
+    try:
+        from compass.connector.wsi import WSI
+    except ImportError as e:
+        raise SystemExit(f"wsi_import: {e}\n{CONNECTOR_HINT}") from e
+    info = WSI(args.src).info
+    return {k: info[k] for k in ("width", "height", "mpp_x", "mpp_y",
+                                 "objective_power", "roi")}
+
+
+def _plan(args: argparse.Namespace, meta: dict, crop) -> dict:
+    """Resolve the crop and --start-level/--start-mpp into a plan_import()
+    result (exits with a message on an impossible start level)."""
+    crop_xywh = resolve_crop(meta["width"], meta["height"], meta["roi"], crop)
+    full = plan_levels(crop_xywh[2], crop_xywh[3], crop_xywh[0], crop_xywh[1],
+                       args.downscale_factor, args.min_size)
+    start = args.start_level
+    if args.start_mpp is not None:
+        if meta["mpp_x"] is None:
+            raise SystemExit("wsi_import: --start-mpp needs the source "
+                             "calibration; pass --mpp")
+        mpp0 = 0.5 * (meta["mpp_x"] + meta["mpp_y"])
+        start = closest_level_for_mpp(mpp0, args.start_mpp, len(full),
+                                      args.downscale_factor)
+    try:
+        return plan_import(meta["width"], meta["height"], crop_xywh, start,
+                           args.downscale_factor, args.min_size)
+    except ValueError as e:
+        lines = [f"  [{k}] {lv['w']} x {lv['h']}" + (
+                 f"  {meta['mpp_x'] * args.downscale_factor ** k:.4g} um/px"
+                 if meta["mpp_x"] is not None else "")
+                 for k, lv in enumerate(full)]
+        raise SystemExit(f"wsi_import: {e}. Planned levels:\n" + "\n".join(lines))
+
+
+def _provenance(args: argparse.Namespace) -> dict:
+    prov = {"tool": "wsi_import",
+            "start": {"requested_level": args.start_level if args.start_mpp is None else None,
+                      "requested_mpp": args.start_mpp}}
+    if args.crop == "detect":
+        prov["crop"] = {"mode": "detect"}
+    return prov
+
+
+def format_record(record: dict, fmt: str = "json") -> str:
+    """Import record as JSON, or as shell-quoted KEY=value lines ("kv")."""
+    if fmt == "json":
+        return json.dumps(record, indent=2)
+
+    def flat(prefix, v):
+        if isinstance(v, dict):
+            for k, sub in v.items():
+                yield from flat(f"{prefix}_{k}" if prefix else str(k), sub)
+        else:
+            yield prefix, v
+
+    def text(v):
+        if v is None:
+            return ""
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        if isinstance(v, (list, tuple)):
+            return " ".join(text(x) for x in np.ravel(np.asarray(v, dtype=object)))
+        return str(v)
+
+    lines = []
+    for key, v in flat("", record):
+        key = re.sub(r"[^A-Za-z0-9_]", "_", key).upper()
+        lines.append(f"{key}={shlex.quote(text(v))}")
+    return "\n".join(lines)
+
+
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="wsi_import.py",
@@ -215,6 +352,23 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
                               "tile size (default: 512)")
     pyramid.add_argument("--shard-factor", type=int, default=8,
                          help="shard edge in chunks (default: 8)")
+    start = pyramid.add_mutually_exclusive_group()
+    start.add_argument("--start-level", type=int, default=0, metavar="N",
+                       help="import from level N of the planned pyramid "
+                            "(as listed by --info) onwards: it becomes level "
+                            "0, the result has N fewer levels (default: 0)")
+    start.add_argument("--start-mpp", type=float, default=None, metavar="MPP",
+                       help="like --start-level, for the planned level whose "
+                            "resolution is closest to MPP microns/pixel")
+
+    meta = parser.add_argument_group("import record")
+    meta.add_argument("--show-meta", action="store_true",
+                      help="print the import record on stdout (all other "
+                           "output goes to stderr); with --info, the record "
+                           "of what would be imported")
+    meta.add_argument("--meta-format", choices=["json", "kv"], default="json",
+                      help="record format: json (default) or kv, shell-quoted "
+                           "KEY=value lines for eval")
 
     crop = parser.add_mutually_exclusive_group()
     crop.add_argument("--auto-crop", action="store_true",
@@ -269,6 +423,10 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             parser.error(f"--{flag.replace('_', '-')} must be positive")
     if args.downscale_factor < 2:
         parser.error("--downscale-factor must be >= 2")
+    if args.start_level < 0:
+        parser.error("--start-level must be >= 0")
+    if args.start_mpp is not None and args.start_mpp <= 0:
+        parser.error("--start-mpp must be positive")
     return args
 
 
@@ -278,64 +436,48 @@ def _mpp_arg(args) -> float | tuple[float, float] | None:
     return args.mpp[0] if len(args.mpp) == 1 else (args.mpp[0], args.mpp[1])
 
 
-def _width_height(args) -> tuple[int, int]:
-    """(width, height) at full resolution for the pyramid plan."""
-    if args.format == "ometiff":
-        import tifffile
-        with tifffile.TiffFile(args.src) as tif:
-            series = args.series
-            if series is None:
-                series = _select_series(tif)
-            sr = tif.series[series]
-            return (int(sr.shape[sr.axes.index("X")]),
-                    int(sr.shape[sr.axes.index("Y")]))
-    try:
-        from compass.connector.wsi import WSI
-    except ImportError as e:
-        raise SystemExit(f"wsi_import: {e}\n{CONNECTOR_HINT}") from e
-    wsi = WSI(args.src)
-    return int(wsi.info["width"]), int(wsi.info["height"])
-
-
-def _print_info(args) -> None:
-    width, height = _width_height(args)
-    print(f"source: {args.src}  [{args.format}]")
+def _print_info(args, out) -> None:
+    """Human-readable source metadata and pyramid plan, to ``out``."""
+    p = lambda *a: print(*a, file=out)
+    meta = _source_meta(args)
+    p(f"source: {args.src}  [{args.format}]")
     if args.format == "ometiff":
         import tifffile
         from compass.connector.ometiff import read_ome_metadata
         with tifffile.TiffFile(args.src) as tif:
-            print(f"series: {len(tif.series)}")
+            p(f"series: {len(tif.series)}")
             for k, sr in enumerate(tif.series):
-                mark = "*" if args.series in (None, k) and sr is tif.series[
-                    args.series if args.series is not None else k] else " "
-                print(f"  {mark} [{k}] axes={sr.axes} shape={tuple(sr.shape)} "
-                      f"dtype={sr.dtype}")
+                mark = "*" if k == meta["series"] else " "
+                p(f"  {mark} [{k}] axes={sr.axes} shape={tuple(sr.shape)} "
+                  f"dtype={sr.dtype}")
             if tif.is_ome:
-                idx = 0
-                if args.series is not None:
-                    idx = args.series
-                else:
-                    idx = max(range(len(tif.series)),
-                              key=lambda k: tif.series[k].size)
-                print("calibration:",
-                      read_ome_metadata(tif.ome_metadata, idx))
+                p("calibration:", read_ome_metadata(tif.ome_metadata, meta["series"]))
     else:
-        try:
-            from compass.connector.wsi import WSI
-        except ImportError as e:
-            raise SystemExit(f"wsi_import: {e}\n{CONNECTOR_HINT}") from e
+        from compass.connector.wsi import WSI
         info = dict(WSI(args.src).info)
         info["channels"] = ["R", "G", "B"]
-        print("metadata:", info)
-    crop = _resolve_autocrop(args)
-    x0, y0, w, h = (0, 0, width, height) if crop is False else (
-        crop if crop is not True else (0, 0, width, height))
-    levels = plan_levels(w, h, x0, y0,
-                         downscale_factor=args.downscale_factor,
-                         min_size=args.min_size)
-    print(f"pyramid plan ({len(levels)} levels):")
-    for lv, plan in enumerate(levels):
-        print(f"  [{lv}] {plan['w']} x {plan['h']}")
+        p("metadata:", info)
+
+    plan = _plan(args, meta, _resolve_autocrop(args))
+    x0, y0, w, h = plan["crop"]
+    p(f"crop at level 0: ({x0}, {y0}, {w}, {h})  [{_crop_mode(args, meta['roi'])}]")
+    p(f"pyramid plan ({len(plan['planned'])} levels; importing "
+      f"{len(plan['levels'])} from level {plan['start_level']}):")
+    for lv, size in enumerate(plan["planned"]):
+        mark = ">" if lv == plan["start_level"] else (
+            " " if lv > plan["start_level"] else "-")
+        mpp = (f"  {meta['mpp_x'] * args.downscale_factor ** lv:.4g} um/px"
+               if meta["mpp_x"] is not None else "")
+        p(f"  {mark} [{lv}] {size['w']} x {size['h']}{mpp}")
+    if args.show_meta:
+        record = import_record(
+            src_path=args.src, src_format=args.format,
+            source={k: v for k, v in meta.items() if k != "roi"},
+            crop_mode=_crop_mode(args, meta["roi"]), plan=plan,
+            dst_path=args.dst, downscale_factor=args.downscale_factor,
+            chunk_size=args.chunk_size, shard_factor=args.shard_factor,
+            provenance={**_provenance(args), "dry_run": True})
+        print(format_record(record, args.meta_format))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -352,8 +494,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.dst is None:
         args.dst = default_dst(args.src)
 
+    # with --show-meta, stdout carries only the record
+    out = sys.stderr if args.show_meta else sys.stdout
+
     if args.info:
-        _print_info(args)
+        _print_info(args, out)
         return 0
 
     if args.dst.exists() and not args.overwrite:
@@ -363,7 +508,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     logger.info("wsi_import: %s [%s] -> %s", args.src, args.format, args.dst)
-    kwargs = {'crop': _resolve_autocrop(args),
+    crop = _resolve_autocrop(args)
+    if args.start_mpp is not None or args.start_level > 0:
+        # resolve/validate up front: clear message before any work is done
+        args.start_level = _plan(args, _source_meta(args), crop)["start_level"]
+    kwargs = {'crop': crop,
+        'start_level': args.start_level,
+        'provenance': _provenance(args),
         'downscale_factor': args.downscale_factor,
         'min_size': args.min_size,
         'chunk_size': args.chunk_size,
@@ -371,18 +522,23 @@ def main(argv: list[str] | None = None) -> int:
         'overwrite': args.overwrite}
     try:
         if args.format == "ometiff":
-            ometiff2zarr(args.src, args.dst,
+            record = ometiff2zarr(args.src, args.dst,
                          series=args.series, z=args.z, t=args.t,
                          mpp=_mpp_arg(args),
                          objective_power=args.objective_power,
                          channel_names=args.channel_names,
                          **kwargs)
         else:
-            wsi2zarr(args.src, args.dst, tmp_dir=args.tmp_dir, **kwargs)
+            record = wsi2zarr(args.src, args.dst, tmp_dir=args.tmp_dir, **kwargs)
     except ImportError as e:
         print(f"wsi_import: {e}\n{CONNECTOR_HINT}", file=sys.stderr)
         return 2
-    print(f"wsi_import: wrote {args.dst}")
+    except ValueError as e:  # e.g. start level outside the planned pyramid
+        print(f"wsi_import: {e}", file=sys.stderr)
+        return 2
+    print(f"wsi_import: wrote {args.dst}", file=out)
+    if args.show_meta:
+        print(format_record(record, args.meta_format))
     return 0
 
 

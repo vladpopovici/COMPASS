@@ -38,7 +38,11 @@ raster, vectorized AnnotationStore); `connector/` is ported (`wsi.py`
 OpenSlide reader, `ingest.py: wsi2zarr` pyvips->Zarr pyramid baking,
 `ingest.py: ometiff2zarr` tifffile->Zarr (multi-channel/uint16, OME-XML
 calibration, box-averaged levels built from Zarr, no temp files),
-`export.py: raster2tiff` OME-TIFF interchange); `viewer/` covers build
+`export.py: raster2tiff` OME-TIFF interchange; both ingest paths take
+`start_level=` (partial pyramid from a planned level) and return/store an
+import record — crop, start level, calibration, typed source->output
+`transform` — as the Zarr group attr `import`; CLI `--start-level`/
+`--start-mpp`/`--show-meta` in `src/tools/wsi_import.py`); `viewer/` covers build
 steps 1-3 of architecture section 7 (psygnal ViewerState, headless tile
 grid/LRU cache/threaded fetcher, vispy SlideCanvas with pan/zoom +
 level-switching tile streaming, `python -m compass.viewer slide.zarr`

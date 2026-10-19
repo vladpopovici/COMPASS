@@ -676,7 +676,8 @@ wsi.get_region_px(0, 0, 512, 512, level=2)  # RGB; transparent pixels -> backgro
 
 ```python
 wsi2zarr(wsi_path, dst_path, crop=False, downscale_factor=2, min_size=256,
-         chunk_size=512, shard_factor=8, tmp_dir=None, overwrite=False)
+         chunk_size=512, shard_factor=8, tmp_dir=None, overwrite=False,
+         start_level=0, provenance=None) -> dict
 ```
 
 | Parameter | Meaning |
@@ -688,6 +689,11 @@ wsi2zarr(wsi_path, dst_path, crop=False, downscale_factor=2, min_size=256,
 | `shard_factor` | Shard edge in chunks |
 | `tmp_dir` | Where the temporary `.v` intermediates go (default: next to `dst_path`) |
 | `overwrite` | Replace an existing store; otherwise an existing one raises |
+| `start_level` | Start from this level of the planned pyramid; see [Partial pyramids and the import record](#partial-pyramids-and-the-import-record) |
+| `provenance` | Extra fields merged into the import record |
+
+Returns the import record, which is also stored in the group's `import`
+attribute.
 
 ```python
 from compass.connector import wsi2zarr
@@ -732,7 +738,8 @@ check a few landmark annotations against the converted raster
 ometiff2zarr(src_path, dst_path, series=None, z=None, t=None, crop=False,
              mpp=None, objective_power=None, channel_names=None,
              downscale_factor=2, min_size=256, chunk_size=512,
-             shard_factor=8, overwrite=False)
+             shard_factor=8, overwrite=False, start_level=0,
+             provenance=None) -> dict
 ```
 
 For OME-TIFF files: exports from other tools (QuPath, Bio-Formats
@@ -748,7 +755,7 @@ For OME-TIFF files: exports from other tools (QuPath, Bio-Formats
 | `objective_power` | Overrides the file's `NominalMagnification`; **required** if the file has none |
 | `channel_names` | Overrides the OME channel names |
 | `downscale_factor` | Integer scale between consecutive levels (≥ 2) |
-| `min_size`, `chunk_size`, `shard_factor`, `overwrite` | As for `wsi2zarr` |
+| `min_size`, `chunk_size`, `shard_factor`, `overwrite`, `start_level`, `provenance` | As for `wsi2zarr` (with a start level, the base level is box-averaged from full resolution while copying) |
 
 ```python
 from compass.connector import ometiff2zarr
@@ -806,6 +813,89 @@ box_downsample(np.array([[0, 1], [1, 1]], np.uint8), 2)   # [[1]]  (0.75 rounds 
 Series are matched to OME `Image` elements by index (tifffile builds one
 series per OME image, in order); a file mixing OME and non-OME series may
 pair metadata with the wrong image.
+
+## Partial pyramids and the import record
+
+**Starting level.** `start_level=k` imports from level *k* of the pyramid
+that would otherwise be built (the plan `wsi_import.py --info` prints).
+That level becomes level 0, so the store has *k* fewer levels, and its
+calibration is scaled to match: `mpp × factor^k`,
+`objective_power ÷ factor^k`. The crop is still given in source level-0
+coordinates. Its origin is snapped down to the start level's pixel grid,
+so the source → output mapping is exact.
+
+- `wsi2zarr` reads the base image from the coarsest **stored** slide level
+  whose downsample divides `factor^k` and only resizes the remainder. On a
+  scanner with ×2 levels, importing from level 3 never reads full
+  resolution: a 57,344 × 50,944 NDPI imports from level 3 in about 4 s,
+  pixel-identical to OpenSlide's level 3.
+- `ometiff2zarr` box-averages from full resolution while copying, in
+  bounded sub-reads.
+
+```python
+from compass.connector import closest_level_for_mpp, plan_import, plan_levels
+
+plan = plan_import(1500, 1200, crop=(9, 17, 1400, 1100), start_level=1)
+plan["downsample"], plan["crop"], plan["levels"]
+# (2, (8, 16, 1400, 1100), [{'w': 700, 'h': 550}, {'w': 350, 'h': 275}])
+
+# level of the plan closest to 1 um/px (by ratio; ties -> finer)
+closest_level_for_mpp(0.25, 1.0, nlevels=len(plan["planned"]))   # 2
+```
+
+**Import record.** Both converters return a JSON-serializable record and
+store it in the group's `import` attribute
+(`ZarrRaster(dst).info["import"]`):
+
+| Key | Content |
+|---|---|
+| `record_version`, `timestamp` | Layout version (1); ISO-8601 time with time zone |
+| `source` | `path` (absolute), `name`, `format` (`wsi`/`ometiff`), `width`, `height`, `mpp_x`, `mpp_y`, `objective_power`; OME-TIFF adds `series`, `z`, `t`, `dtype`, `channel_names` |
+| `crop` | `mode` (`none`, `roi`, `explicit`, `detect`), effective `x0`, `y0`, `width`, `height` at **source level 0** (the full extent if not cropped), and the `requested` crop before snapping |
+| `start` | `level`, `downsample`, `mpp_x`, `mpp_y` of the start level (+ `requested_level` / `requested_mpp` from the CLI) |
+| `output` | `path`, `format_version`, `levels`, `width`, `height`, `mpp_x`, `mpp_y`, `objective_power`, `downscale_factor`, `chunk_size`, `shard_factor`, `level_shapes` |
+| `transform` | Source level-0 → output level-0 pixels (below) |
+| `tool`, `dry_run` | Added by `wsi_import.py` |
+
+`transform.type` is one of the controlled vocabulary
+`compass.connector.TRANSFORM_TYPES` = `shift`, `rotate`, `scale`,
+`affine`: the most specific type that describes the mapping.
+`x_out = (x_src - crop.x0) / start.downsample` (same for y) is a `shift`
+(`dx`, `dy`) without a start level, a `scale` (`sx`, `sy`) without a crop
+offset, and `affine` otherwise. `matrix` (2 × 3, row-major, applied to
+`(x, y, 1)`) is always present, so a consumer can ignore `type`:
+
+```python
+import numpy as np
+from compass.core import ZarrRaster
+
+t = ZarrRaster("slide.zarr").info["import"]["transform"]
+M = np.asarray(t["matrix"])
+xy_out = (M @ np.c_[xy_src, np.ones(len(xy_src))].T).T   # (N, 2) points
+```
+
+**Command line.** `src/tools/wsi_import.py` exposes both:
+
+```bash
+# from planned level 2, or from the level closest to 1 um/px
+uv run python src/tools/wsi_import.py slide.ndpi --start-level 2
+uv run python src/tools/wsi_import.py slide.ndpi --start-mpp 1.0 --crop=detect
+
+# print the record (stdout has only the record; messages go to stderr)
+uv run python src/tools/wsi_import.py slide.ndpi --start-mpp 1.0 --show-meta > rec.json
+
+# dry run: the record of what would be imported, as shell variables
+eval "$(uv run python src/tools/wsi_import.py slide.ndpi --start-mpp 1.0 \
+        --info --show-meta --meta-format kv)"
+echo "$CROP_X0 $CROP_Y0 $START_DOWNSAMPLE $TRANSFORM_TYPE $TRANSFORM_MATRIX"
+```
+
+`--meta-format kv` prints one shell-quoted `KEY=value` per line. Keys are
+the JSON paths, upper-cased and joined by `_` (`OUTPUT_MPP_X`,
+`CROP_REQUESTED_X0`); lists are space-separated (`TRANSFORM_MATRIX='0.125
+0.0 -82.0 0.0 0.125 -396.0'`) and null is empty. An out-of-range
+`--start-level` stops before any work, listing the planned levels with
+their µm/px.
 
 ## Planning helpers
 

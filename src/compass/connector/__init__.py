@@ -20,10 +20,17 @@ import WSI``), so importing ``compass.connector`` itself needs none of them.
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
 from .export import build_omexml, raster2tiff
-from .ingest import box_downsample, ometiff2zarr, plan_levels, resolve_crop, wsi2zarr
+from .ingest import (TRANSFORM_TYPES, box_downsample, closest_level_for_mpp,
+                     crop_scale_transform, import_record, ometiff2zarr,
+                     plan_import, plan_levels, resolve_crop, wsi2zarr)
 
 __all__ = [
+    "TRANSFORM_TYPES",
     "box_downsample",
+    "closest_level_for_mpp",
+    "crop_scale_transform",
+    "import_record",
+    "plan_import",
     "build_omexml",
     "ometiff2zarr",
     "plan_levels",
