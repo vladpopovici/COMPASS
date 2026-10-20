@@ -13,8 +13,9 @@ Full design rationale and decision log: @docs/architecture.md
 ```
 src/compass/
   core/         # PyramidalRaster protocol + Zarr backend (ZarrRaster,
-                # write_pyramid), annotation data-access layer
-                # (AnnotationStore: SQLite/R-tree -> geopandas/polars).
+                # write_pyramid), annotations in core/annot/ (object
+                # classes, vectorized transforms, AnnotationStore:
+                # SQLite/R-tree <-> geopandas/polars, legacy API).
                 # Minimal deps. Everything else depends on this; this
                 # depends on nothing else in this project.
   connector/    # AnnData/SpatialData conversion, WSI ingestion
@@ -34,7 +35,11 @@ src/compass/
 ```
 
 Migration status: `core/` is ported (pyramid protocol, Magnification, Zarr
-raster, vectorized AnnotationStore); `connector/` is ported (`wsi.py`
+raster, and all of legacy `annot.py` + `annot_sqlite_storage.py` as
+`core/annot/` — guide in @docs/annotations.md: object classes, GeoDataFrame
+transforms, `AnnotationStore` read/write (`mode="r"|"r+"|"w"`, `:memory:`),
+legacy `Annotation`/`save_annotation`/`load_annotation`/`query_*`/`fetch_*`
+on top of it); `connector/` is ported (`wsi.py`
 OpenSlide reader, `ingest.py: wsi2zarr` pyvips->Zarr pyramid baking,
 `ingest.py: ometiff2zarr` tifffile->Zarr (multi-channel/uint16, OME-XML
 calibration, box-averaged levels built from Zarr, no temp files),

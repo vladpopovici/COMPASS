@@ -24,7 +24,9 @@ This document covers everything under `src/compass/` **except**
 are ported). It is the *what/how*: package layout, API, file formats and
 worked examples. The *why* behind each design choice — Zarr instead of
 HDF5, no browser/JS, OpenSlide confined to ingestion, no napari — is the
-decision log in [`architecture.md`](architecture.md).
+decision log in [`architecture.md`](architecture.md). Two parts have their
+own guides: annotations in [`annotations.md`](annotations.md) and the
+viewer in [`viewer.md`](viewer.md).
 
 Unless marked otherwise, every example below was run against the code while
 writing this document; output blocks are real output. Examples that need
@@ -36,7 +38,7 @@ OpenGL, libvips or OpenSlide are marked as such.
 
 | Package | Purpose | Status |
 |---|---|---|
-| `compass.core` | `PyramidalRaster` protocol, Zarr raster backend, magnification math, vectorized SQLite/R-tree annotation reader | Ported, tested |
+| `compass.core` | `PyramidalRaster` protocol, Zarr raster backend, magnification math, annotations (object classes, vectorized transforms, SQLite/R-tree store with read and write, legacy API) | Ported, tested. Annotation guide: [`annotations.md`](annotations.md) |
 | `compass.connector` | WSI ingestion (OpenSlide → pyvips → Zarr), OME-TIFF export | Ported; ingestion tested against stand-ins (no libvips/OpenSlide needed) |
 | `compass.processing` | Domain algorithms (tissue detection, stain normalization, sampling, registration, Visium) | Empty stub |
 | `compass.viewer` | psygnal state, tile grid/cache/fetcher, vispy tile-streaming canvas, keyboard/mouse navigation, overview thumbnail, `python -m compass.viewer` | Steps 1–3 of the build order (architecture §7). No annotation overlays or analysis panels yet. Full guide: [`viewer.md`](viewer.md) |
@@ -88,8 +90,10 @@ without `libGL`.
 uv run pytest src/compass/tests -q
 ```
 
-The suite covers `core` (magnification math, Zarr raster I/O, annotation
-store), the headless parts of `viewer` (state, tile grid/cache, fetcher),
+The suite covers `core` (magnification math, Zarr raster I/O,
+annotations: objects, transforms, store reads and writes, the legacy API —
+plus file exchange with `compass.legacy`, run only when its dependencies
+are installed), the headless parts of `viewer` (state, tile grid/cache, fetcher),
 and `connector.ingest` (planning helpers, the full `wsi2zarr` pipeline
 against numpy stand-ins for pyvips and OpenSlide, and `ometiff2zarr`
 end-to-end on real OME-TIFFs written by tifffile — which is in the dev
@@ -157,31 +161,19 @@ Format version 1 was the legacy HDF5 layout.
 
 ## Annotation database (SQLite + R-tree)
 
-The schema is defined in `compass.core.SQLITE_DDL` (byte-identical to the
-legacy writer's, checked by a test). Create an empty database with
-`compass.core.init_db(path)`.
-
-| Table | Contents |
-|---|---|
-| `meta` | key/value: `schema_version`, plus free-form keys (`name`, `mpp`, image size, …) |
-| `layers` | `layer_id`, unique `name` |
-| `groups` | `group_id`, `layer_id`, `name` (unique within a layer) |
-| `objects` | `object_id`, `type_code`, `name`, `wkb` geometry, `circle_r`, bbox `min_x/min_y/max_x/max_y` |
-| `object_groups` | many-to-many object ↔ group; a trigger forbids one object being in groups of *different* layers |
-| `objects_rtree` | R-tree over the bboxes, kept in sync by triggers |
-| `scalar_attributes` | attribute dictionary `attr_id` ↔ `attr_name` (e.g. gene names) |
-| `object_scalar_sparse` | per object: packed `uint32` attribute ids + `float32` values |
-
-Geometry type codes (`ANNOT_TYPE_CODE`): `POINT=1`, `POINTSET=2`,
-`POLYLINE=3`, `POLYGON=4`, `CIRCLE=5`. A circle is stored as its center
-`POINT` plus `circle_r`; its bbox must include the radius.
+One SQLite file per slide: WKB geometries with bounding boxes, an R-tree
+kept in sync by triggers, a layer → group → object hierarchy and sparse
+float32 scalars per object. The schema is the legacy writer's, unchanged,
+so legacy and current files are interchangeable. Tables, type codes and
+circle encoding: [`annotations.md`](annotations.md), *File format*.
 
 # `compass.core`
 
 ```python
 from compass.core import (ZarrRaster, write_pyramid, PyramidalRaster,
-                          Magnification, AnnotationStore, init_db,
-                          ImageShape, Px, rasterize_polygon,
+                          Magnification, AnnotationStore, Annotation,
+                          Point, PointSet, PolyLine, Polygon, Circle,
+                          init_db, ImageShape, Px, rasterize_polygon,
                           create_level_array, write_pyramid_attrs)
 ```
 
@@ -407,235 +399,33 @@ rasterize_polygon(shapely.Polygon([(0, 0), (4, 0), (4, 4)]), shape=(5, 5))
  [0 0 0 0 1]]
 ```
 
-## `AnnotationStore`
+## Annotations: `compass.core.annot`
 
-Read-only, vectorized access to one annotation database. Bulk queries
-return **polars DataFrames** (tables, ids, scalars) or **geopandas
-GeoDataFrames indexed by `object_id`** (geometry). Geometry is decoded
-with a single `shapely.from_wkb` call per query.
+Annotation objects, transforms and the annotation store. Everything is in
+[`annotations.md`](annotations.md); in short:
 
-### Creating a database to work with
-
-The bulk *writer* is not ported out of `legacy` yet. Until it is, a
-database can be built with `init_db` and plain SQL. This one (used by the
-examples below) has 1,000 cells in two groups, a region polygon, a circle
-and sparse marker values:
-
-```python
-import sqlite3
-import numpy as np
-import shapely
-from compass.core import init_db
-
-init_db("demo.ann.sqlite")
-con = sqlite3.connect("demo.ann.sqlite")
-con.execute("PRAGMA foreign_keys = ON")
-con.executemany("INSERT INTO meta(key, value) VALUES (?, ?)",
-                [("name", "demo"), ("mpp", "0.25")])
-con.execute("INSERT INTO layers VALUES (1, 'cells'), (2, 'regions')")
-con.execute("INSERT INTO groups VALUES (1, 1, 'tumor'), (2, 1, 'stroma'), "
-            "(3, 2, 'annotated')")
-
-def add(oid, code, geom, group, name=None, r=None):
-    x0, y0, x1, y1 = geom.bounds
-    if r is not None:  # circle: bbox includes the radius
-        x0, y0, x1, y1 = x0 - r, y0 - r, x1 + r, y1 + r
-    con.execute("INSERT INTO objects VALUES (?,?,?,?,?,?,?,?,?)",
-                (oid, code, name, shapely.to_wkb(geom), r, x0, y0, x1, y1))
-    con.execute("INSERT INTO object_groups VALUES (?, ?)", (oid, group))
-
-rng = np.random.default_rng(0)
-for i, (x, y) in enumerate(rng.uniform(0, 6000, size=(1000, 2)), start=1):
-    add(i, 1, shapely.Point(x, y), group=1 if x < 3000 else 2, name=f"cell{i}")
-add(1001, 4, shapely.box(500, 500, 2500, 2000), group=3, name="roi A")
-add(1002, 5, shapely.Point(4000, 4000), group=3, name="spot", r=150.0)
-
-con.executemany("INSERT INTO scalar_attributes VALUES (?, ?)",
-                [(0, "CD3"), (1, "CD8"), (2, "PanCK")])
-for i in range(1, 1001):
-    ids = np.array([0, 2] if i % 2 else [1], np.uint32)
-    vals = rng.random(ids.size).astype(np.float32)
-    con.execute("INSERT INTO object_scalar_sparse VALUES (?, ?, ?)",
-                (i, ids.tobytes(), vals.tobytes()))
-con.commit()
-con.close()
-```
-
-The R-tree is filled by triggers; only `objects` needs inserting.
-
-### Opening and browsing the hierarchy
-
-The store opens the file read-only. Use it as a context manager (or call
-`close()`).
+- **Objects** — `Point`, `PointSet`, `PolyLine`, `Polygon`, `Circle`: build
+  and inspect single objects, with `translate`, `scale`, `resize`,
+  `affine`.
+- **Frames** — `compass.core.annot.transform` applies the same transforms
+  to whole GeoDataFrames in one numpy pass.
+- **Store** — `AnnotationStore(path, mode="r" | "r+" | "w")`: spatial and
+  hierarchy queries returning GeoDataFrames / polars frames; adding,
+  updating and removing objects, groups, layers and scalars; whole-store
+  transforms (including an import record's matrix); in-memory stores.
+- **Legacy API** — `Annotation`, `save_annotation`, `load_annotation`,
+  `query_*`, `fetch_*`, on top of the store.
 
 ```python
-from compass.core import AnnotationStore
+from compass.core import AnnotationStore, Circle
 
-store = AnnotationStore("demo.ann.sqlite")
-store.meta                      # {'schema_version': '1', 'name': 'demo', 'mpp': '0.25'}
-store.get_layers()              # layer_id, name
-store.get_groups(layer_id=1)    # group_id, layer_id, name
-store.count_objects_per_group()
+with AnnotationStore("slide.ann.sqlite", mode="w") as store:
+    ids = store.add_objects(cells_gdf, layer="cells", group="tumor", data=markers)
+    store.add_object(Circle((4000, 4000), 150.0), layer="regions", group="spots")
+
+with AnnotationStore("slide.ann.sqlite") as store:          # read-only
+    gdf = store.get_objects_in_roi(store.get_layer_id("cells"), (0, 0, 2000, 2000))
 ```
-
-```
-shape: (3, 4)
-┌──────────┬──────────┬────────────┬───────────┐
-│ group_id ┆ layer_id ┆ group_name ┆ n_objects │
-│ ---      ┆ ---      ┆ ---        ┆ ---       │
-│ i64      ┆ i64      ┆ str        ┆ i64       │
-╞══════════╪══════════╪════════════╪═══════════╡
-│ 1        ┆ 1        ┆ tumor      ┆ 472       │
-│ 2        ┆ 1        ┆ stroma     ┆ 528       │
-│ 3        ┆ 2        ┆ annotated  ┆ 2         │
-└──────────┴──────────┴────────────┴───────────┘
-```
-
-Names resolve to ids. Group names are unique only within a layer, so pass
-`layer_id` to disambiguate:
-
-```python
-cells = store.get_layer_id("cells")                     # 1
-tumor = store.get_group_id("tumor", layer_id=cells)     # 1
-store.get_layer_id("nuclei")
-# ValueError: Unknown layer name 'nuclei'. Available layers: cells, regions
-```
-
-### Viewport queries
-
-All ROIs are `(x0, y0, x1, y1)` in level-0 pixels and match on bounding
-box intersection via the R-tree.
-
-```python
-roi = (0, 0, 2000, 2000)
-store.count_objects_in_roi(cells, roi)     # 107 — R-tree only, no geometry
-
-gdf = store.get_objects_in_roi(cells, roi, group_ids=[tumor])
-gdf.head(3)
-```
-
-```
-            type    name  circle_r                  geometry
-object_id
-1          POINT   cell1       NaN  POINT (1470.754 181.037)
-13         POINT  cell13       NaN   POINT (196.729 153.311)
-18         POINT  cell18       NaN   POINT (695.879 917.332)
-```
-
-`group_ids` restricts the query to the currently visible groups. The
-columns are always `type` (categorical), `name`, `circle_r` (NaN except
-circles) and `geometry`.
-
-### Fetching by id
-
-```python
-store.get_object_ids_in_layer(cells)            # np.ndarray[int64], 1000 ids
-store.get_object_ids_in_group(tumor)            # 472 ids
-store.get_object_ids_in_roi(cells, roi)         # array([ 1, 13, 18, 30, 32, ...])
-
-regions = store.get_objects(store.get_object_ids_in_layer(2))
-```
-
-```
-              type   name  circle_r                                       geometry
-object_id
-1001       POLYGON  roi A       NaN  POLYGON ((2500 500, 2500 2000, 500 2000, 500 5...
-1002        CIRCLE   spot     150.0  POLYGON ((4150 4000, 4147.118 3970.736, 4138.5...
-```
-
-Circles are decoded to polygonal disks by default so every geometry can
-be drawn uniformly. Pass `circles_as_disks=False` to keep the center
-points (the radius stays in `circle_r`):
-
-```python
-store.get_objects([1002], circles_as_disks=False).geometry.iloc[0].geom_type   # 'Point'
-```
-
-Id lists of any length work; queries are chunked below SQLite's
-bound-parameter limit.
-
-### Bounding boxes and memberships
-
-When geometry isn't needed (coarse rendering, density maps, hit-testing),
-skip decoding entirely:
-
-```python
-store.get_bboxes(layer_id=2)
-```
-
-```
-┌───────────┬────────┬────────┬────────┬────────┐
-│ object_id ┆ min_x  ┆ min_y  ┆ max_x  ┆ max_y  │
-╞═══════════╪════════╪════════╪════════╪════════╡
-│ 1001      ┆ 500.0  ┆ 500.0  ┆ 2500.0 ┆ 2000.0 │
-│ 1002      ┆ 3850.0 ┆ 3850.0 ┆ 4150.0 ┆ 4150.0 │
-└───────────┴────────┴────────┴────────┴────────┘
-```
-
-```python
-store.get_memberships([1, 2, 1001])   # object_id, group_id (all objects if omitted)
-```
-
-### Sparse per-object scalars (expression profiles)
-
-```python
-store.get_scalar_attribute_names()      # attr_id, attr_name
-store.get_scalar_data_long([1, 2])      # COO form
-```
-
-```
-┌───────────┬─────────┬──────────┐
-│ object_id ┆ attr_id ┆ value    │
-╞═══════════╪═════════╪══════════╡
-│ 1         ┆ 0       ┆ 0.501237 │
-│ 1         ┆ 2       ┆ 0.419153 │
-│ 2         ┆ 1       ┆ 0.012871 │
-└───────────┴─────────┴──────────┘
-```
-
-Wide form, restricted to the attributes you actually need (with ~20,000
-genes, always restrict):
-
-```python
-store.get_scalar_data(gdf.index.to_numpy()[:4], attributes=["CD3", "CD8"])
-```
-
-```
-┌───────────┬──────────┬──────────┐
-│ object_id ┆ CD3      ┆ CD8      │
-╞═══════════╪══════════╪══════════╡
-│ 1         ┆ 0.501237 ┆ null     │
-│ 13        ┆ 0.393233 ┆ null     │
-│ 18        ┆ null     ┆ 0.308101 │
-│ 30        ┆ null     ┆ 0.613048 │
-└───────────┴──────────┴──────────┘
-```
-
-Absent values are `null`. Columns follow the order attributes appear in
-the data, so select by name rather than position. Objects with no values
-at all get no row.
-
-### Method summary
-
-| Method | Returns |
-|---|---|
-| `meta` | `dict[str, str]` |
-| `get_layers()` | polars: `layer_id`, `name` |
-| `get_groups(layer_id=None)` | polars: `group_id`, `layer_id`, `name` |
-| `get_layer_id(name)`, `get_group_id(name, layer_id=None)` | `int` (`ValueError` if unknown) |
-| `count_objects_per_group()` | polars: `group_id`, `layer_id`, `group_name`, `n_objects` |
-| `count_objects_in_roi(layer_id, roi)` | `int` |
-| `get_object_ids_in_layer / _in_group / _in_roi(...)` | `np.ndarray[int64]` |
-| `get_objects(ids, circles_as_disks=True)` | GeoDataFrame |
-| `get_objects_in_roi(layer_id, roi, group_ids=None, circles_as_disks=True)` | GeoDataFrame |
-| `get_bboxes(layer_id=None)` | polars: `object_id`, `min_x`, `min_y`, `max_x`, `max_y` |
-| `get_memberships(ids=None)` | polars: `object_id`, `group_id` |
-| `get_scalar_attribute_names()` | polars: `attr_id`, `attr_name` |
-| `get_scalar_data_long(ids)` | polars: `object_id`, `attr_id`, `value` |
-| `get_scalar_data(ids, attributes=None)` | polars, wide: `object_id` + one column per attribute |
-
-Module-level constants: `SQLITE_DDL`, `SCHEMA_VERSION` (`"1"`),
-`ANNOT_TYPE_CODE`, `ANNOT_CODE_TYPE`.
 
 # `compass.connector`
 
@@ -1235,8 +1025,9 @@ dist_px0 = 100 / raster.native_resolution  # 100 µm in level-0 pixels (400.0)
 
 # Known limitations
 
-- **No annotation writer outside `legacy`** yet; `AnnotationStore` is
-  read-only (see the SQL example above).
+- **Annotation writes** are bounded by SQLite's R-tree upkeep: adding or
+  transforming a million objects takes tens of seconds
+  ([`annotations.md`](annotations.md), *Performance*).
 - **Viewer**: no annotation overlays, selection or analysis panels yet
   (build steps 4–5, architecture §7). The canvas isn't covered by automated
   tests.

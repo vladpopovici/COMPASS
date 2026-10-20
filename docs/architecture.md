@@ -156,6 +156,27 @@ brief is already a first-class part of this schema (layers contain
 groups; objects belong to one or more groups within a layer) — no new
 data-modeling needed for that feature.
 
+### Status (2026-10-20): ported to `compass.core.annot`
+
+All of the legacy annotation functionality now lives in `core`, with the
+schema unchanged (legacy and current files are interchangeable, checked
+both ways by tests). Full guide: [`annotations.md`](annotations.md).
+
+- `AnnotationStore` is the single implementation: read-only (`mode="r"`,
+  the viewer) or writable (`"r+"`, `"w"`, `":memory:"`), vectorized in
+  both directions (GeoDataFrames in, GeoDataFrames out).
+- The object classes are kept for single objects (building, inspecting a
+  selection); bulk transforms run over GeoDataFrames or in the store.
+- The legacy `Annotation` class and module functions are kept as a thin
+  layer over an in-memory store, so existing scripts port by changing
+  imports. Its objects are copied in, not referenced.
+- Rules decided during the port: an object left in no group is deleted;
+  ids are never reused (tracked in `meta`, as the legacy writer did);
+  group names are scoped to a layer (legacy treated them as global); a
+  circle under a non-similarity transform raises unless
+  `circles="to_polygon"`; circles are 64-vertex disks in memory, exact
+  center + radius in storage.
+
 ### Sparse per-object attributes (e.g. molecular expression)
 
 **Decision**: keep the existing sparse packing (`object_scalar_sparse`

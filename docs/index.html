@@ -2233,24 +2233,16 @@ vertical-align: -.125em;
   <li><a href="#write_pyramid" id="toc-write_pyramid" class="nav-link" data-scroll-target="#write_pyramid"><span class="header-section-number">5.5</span> <code>write_pyramid</code></a></li>
   <li><a href="#streaming-writers-create_level_array-write_pyramid_attrs" id="toc-streaming-writers-create_level_array-write_pyramid_attrs" class="nav-link" data-scroll-target="#streaming-writers-create_level_array-write_pyramid_attrs"><span class="header-section-number">5.6</span> Streaming writers: <code>create_level_array</code>, <code>write_pyramid_attrs</code></a></li>
   <li><a href="#rasterize_polygon" id="toc-rasterize_polygon" class="nav-link" data-scroll-target="#rasterize_polygon"><span class="header-section-number">5.7</span> <code>rasterize_polygon</code></a></li>
-  <li><a href="#annotationstore" id="toc-annotationstore" class="nav-link" data-scroll-target="#annotationstore"><span class="header-section-number">5.8</span> <code>AnnotationStore</code></a>
-  <ul class="collapse">
-  <li><a href="#creating-a-database-to-work-with" id="toc-creating-a-database-to-work-with" class="nav-link" data-scroll-target="#creating-a-database-to-work-with"><span class="header-section-number">5.8.1</span> Creating a database to work with</a></li>
-  <li><a href="#opening-and-browsing-the-hierarchy" id="toc-opening-and-browsing-the-hierarchy" class="nav-link" data-scroll-target="#opening-and-browsing-the-hierarchy"><span class="header-section-number">5.8.2</span> Opening and browsing the hierarchy</a></li>
-  <li><a href="#viewport-queries" id="toc-viewport-queries" class="nav-link" data-scroll-target="#viewport-queries"><span class="header-section-number">5.8.3</span> Viewport queries</a></li>
-  <li><a href="#fetching-by-id" id="toc-fetching-by-id" class="nav-link" data-scroll-target="#fetching-by-id"><span class="header-section-number">5.8.4</span> Fetching by id</a></li>
-  <li><a href="#bounding-boxes-and-memberships" id="toc-bounding-boxes-and-memberships" class="nav-link" data-scroll-target="#bounding-boxes-and-memberships"><span class="header-section-number">5.8.5</span> Bounding boxes and memberships</a></li>
-  <li><a href="#sparse-per-object-scalars-expression-profiles" id="toc-sparse-per-object-scalars-expression-profiles" class="nav-link" data-scroll-target="#sparse-per-object-scalars-expression-profiles"><span class="header-section-number">5.8.6</span> Sparse per-object scalars (expression profiles)</a></li>
-  <li><a href="#method-summary" id="toc-method-summary" class="nav-link" data-scroll-target="#method-summary"><span class="header-section-number">5.8.7</span> Method summary</a></li>
-  </ul></li>
+  <li><a href="#annotations-compass.core.annot" id="toc-annotations-compass.core.annot" class="nav-link" data-scroll-target="#annotations-compass.core.annot"><span class="header-section-number">5.8</span> Annotations: <code>compass.core.annot</code></a></li>
   </ul></li>
   <li><a href="#compass.connector" id="toc-compass.connector" class="nav-link" data-scroll-target="#compass.connector"><span class="header-section-number">6</span> <code>compass.connector</code></a>
   <ul class="collapse">
   <li><a href="#wsi-ingestion-only-slide-reader" id="toc-wsi-ingestion-only-slide-reader" class="nav-link" data-scroll-target="#wsi-ingestion-only-slide-reader"><span class="header-section-number">6.1</span> <code>WSI</code> — ingestion-only slide reader</a></li>
   <li><a href="#wsi2zarr-bake-a-slide-into-the-zarr-pyramid" id="toc-wsi2zarr-bake-a-slide-into-the-zarr-pyramid" class="nav-link" data-scroll-target="#wsi2zarr-bake-a-slide-into-the-zarr-pyramid"><span class="header-section-number">6.2</span> <code>wsi2zarr</code> — bake a slide into the Zarr pyramid</a></li>
   <li><a href="#ometiff2zarr-bake-an-ome-tiff-into-the-zarr-pyramid" id="toc-ometiff2zarr-bake-an-ome-tiff-into-the-zarr-pyramid" class="nav-link" data-scroll-target="#ometiff2zarr-bake-an-ome-tiff-into-the-zarr-pyramid"><span class="header-section-number">6.3</span> <code>ometiff2zarr</code> — bake an OME-TIFF into the Zarr pyramid</a></li>
-  <li><a href="#planning-helpers" id="toc-planning-helpers" class="nav-link" data-scroll-target="#planning-helpers"><span class="header-section-number">6.4</span> Planning helpers</a></li>
-  <li><a href="#raster2tiff-ome-tiff-export" id="toc-raster2tiff-ome-tiff-export" class="nav-link" data-scroll-target="#raster2tiff-ome-tiff-export"><span class="header-section-number">6.5</span> <code>raster2tiff</code> — OME-TIFF export</a></li>
+  <li><a href="#partial-pyramids-and-the-import-record" id="toc-partial-pyramids-and-the-import-record" class="nav-link" data-scroll-target="#partial-pyramids-and-the-import-record"><span class="header-section-number">6.4</span> Partial pyramids and the import record</a></li>
+  <li><a href="#planning-helpers" id="toc-planning-helpers" class="nav-link" data-scroll-target="#planning-helpers"><span class="header-section-number">6.5</span> Planning helpers</a></li>
+  <li><a href="#raster2tiff-ome-tiff-export" id="toc-raster2tiff-ome-tiff-export" class="nav-link" data-scroll-target="#raster2tiff-ome-tiff-export"><span class="header-section-number">6.6</span> <code>raster2tiff</code> — OME-TIFF export</a></li>
   </ul></li>
   <li><a href="#compass.processing" id="toc-compass.processing" class="nav-link" data-scroll-target="#compass.processing"><span class="header-section-number">7</span> <code>compass.processing</code></a></li>
   <li><a href="#compass.viewer" id="toc-compass.viewer" class="nav-link" data-scroll-target="#compass.viewer"><span class="header-section-number">8</span> <code>compass.viewer</code></a>
@@ -2307,7 +2299,7 @@ vertical-align: -.125em;
 
 
 <p>COMPASS is a local, non-browser, single-process Qt application for viewing large pathology whole-slide images (rasters up to ~200,000 × 200,000 px, multi-channel, micron-calibrated) together with millions of associated vector and raster annotations (cell-level points, region polygons, segmentation maps, sparse molecular profiles).</p>
-<p>This document covers everything under <code>src/compass/</code> <strong>except</strong> <code>src/compass/legacy/</code> (the original flat modules, kept unchanged while they are ported). It is the <em>what/how</em>: package layout, API, file formats and worked examples. The <em>why</em> behind each design choice — Zarr instead of HDF5, no browser/JS, OpenSlide confined to ingestion, no napari — is the decision log in <a href="architecture.md"><code>architecture.md</code></a>.</p>
+<p>This document covers everything under <code>src/compass/</code> <strong>except</strong> <code>src/compass/legacy/</code> (the original flat modules, kept unchanged while they are ported). It is the <em>what/how</em>: package layout, API, file formats and worked examples. The <em>why</em> behind each design choice — Zarr instead of HDF5, no browser/JS, OpenSlide confined to ingestion, no napari — is the decision log in <a href="architecture.md"><code>architecture.md</code></a>. Two parts have their own guides: annotations in <a href="annotations.md"><code>annotations.md</code></a> and the viewer in <a href="viewer.md"><code>viewer.md</code></a>.</p>
 <p>Unless marked otherwise, every example below was run against the code while writing this document; output blocks are real output. Examples that need OpenGL, libvips or OpenSlide are marked as such.</p>
 <section id="overview" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Overview</h1>
@@ -2324,8 +2316,8 @@ vertical-align: -.125em;
 <tbody>
 <tr class="odd">
 <td><code>compass.core</code></td>
-<td><code>PyramidalRaster</code> protocol, Zarr raster backend, magnification math, vectorized SQLite/R-tree annotation reader</td>
-<td>Ported, tested</td>
+<td><code>PyramidalRaster</code> protocol, Zarr raster backend, magnification math, annotations (object classes, vectorized transforms, SQLite/R-tree store with read and write, legacy API)</td>
+<td>Ported, tested. Annotation guide: <a href="annotations.md"><code>annotations.md</code></a></td>
 </tr>
 <tr class="even">
 <td><code>compass.connector</code></td>
@@ -2372,7 +2364,7 @@ viewer        -&gt; core, processing (never connector)</code></pre>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--extra</span> viewer      <span class="co"># + vispy, PySide6, psygnal (needs OpenGL)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>pyvips</code> and <code>openslide-python</code> are bindings; the connector also needs the <strong>libvips</strong> system library (OpenSlide’s binary ships in <code>openslide-bin</code>). The viewer needs a working OpenGL driver — vispy can’t even be <em>imported</em> without <code>libGL</code>.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run pytest src/compass/tests <span class="at">-q</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The suite covers <code>core</code> (magnification math, Zarr raster I/O, annotation store), the headless parts of <code>viewer</code> (state, tile grid/cache, fetcher), and <code>connector.ingest</code> (planning helpers, the full <code>wsi2zarr</code> pipeline against numpy stand-ins for pyvips and OpenSlide, and <code>ometiff2zarr</code> end-to-end on real OME-TIFFs written by tifffile — which is in the dev group, so these run under a plain <code>uv sync</code>). It doesn’t exercise the vispy canvas or the Qt entry point.</p>
+<p>The suite covers <code>core</code> (magnification math, Zarr raster I/O, annotations: objects, transforms, store reads and writes, the legacy API — plus file exchange with <code>compass.legacy</code>, run only when its dependencies are installed), the headless parts of <code>viewer</code> (state, tile grid/cache, fetcher), and <code>connector.ingest</code> (planning helpers, the full <code>wsi2zarr</code> pipeline against numpy stand-ins for pyvips and OpenSlide, and <code>ometiff2zarr</code> end-to-end on real OME-TIFFs written by tifffile — which is in the dev group, so these run under a plain <code>uv sync</code>). It doesn’t exercise the vispy canvas or the Qt entry point.</p>
 </section>
 <section id="quick-start" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Quick start</h1>
@@ -2450,62 +2442,16 @@ viewer        -&gt; core, processing (never connector)</code></pre>
 </section>
 <section id="annotation-database-sqlite-r-tree" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="annotation-database-sqlite-r-tree"><span class="header-section-number">4.2</span> Annotation database (SQLite + R-tree)</h2>
-<p>The schema is defined in <code>compass.core.SQLITE_DDL</code> (byte-identical to the legacy writer’s, checked by a test). Create an empty database with <code>compass.core.init_db(path)</code>.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Table</th>
-<th>Contents</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>meta</code></td>
-<td>key/value: <code>schema_version</code>, plus free-form keys (<code>name</code>, <code>mpp</code>, image size, …)</td>
-</tr>
-<tr class="even">
-<td><code>layers</code></td>
-<td><code>layer_id</code>, unique <code>name</code></td>
-</tr>
-<tr class="odd">
-<td><code>groups</code></td>
-<td><code>group_id</code>, <code>layer_id</code>, <code>name</code> (unique within a layer)</td>
-</tr>
-<tr class="even">
-<td><code>objects</code></td>
-<td><code>object_id</code>, <code>type_code</code>, <code>name</code>, <code>wkb</code> geometry, <code>circle_r</code>, bbox <code>min_x/min_y/max_x/max_y</code></td>
-</tr>
-<tr class="odd">
-<td><code>object_groups</code></td>
-<td>many-to-many object ↔︎ group; a trigger forbids one object being in groups of <em>different</em> layers</td>
-</tr>
-<tr class="even">
-<td><code>objects_rtree</code></td>
-<td>R-tree over the bboxes, kept in sync by triggers</td>
-</tr>
-<tr class="odd">
-<td><code>scalar_attributes</code></td>
-<td>attribute dictionary <code>attr_id</code> ↔︎ <code>attr_name</code> (e.g. gene names)</td>
-</tr>
-<tr class="even">
-<td><code>object_scalar_sparse</code></td>
-<td>per object: packed <code>uint32</code> attribute ids + <code>float32</code> values</td>
-</tr>
-</tbody>
-</table>
-<p>Geometry type codes (<code>ANNOT_TYPE_CODE</code>): <code>POINT=1</code>, <code>POINTSET=2</code>, <code>POLYLINE=3</code>, <code>POLYGON=4</code>, <code>CIRCLE=5</code>. A circle is stored as its center <code>POINT</code> plus <code>circle_r</code>; its bbox must include the radius.</p>
+<p>One SQLite file per slide: WKB geometries with bounding boxes, an R-tree kept in sync by triggers, a layer → group → object hierarchy and sparse float32 scalars per object. The schema is the legacy writer’s, unchanged, so legacy and current files are interchangeable. Tables, type codes and circle encoding: <a href="annotations.md"><code>annotations.md</code></a>, <em>File format</em>.</p>
 </section>
 </section>
 <section id="compass.core" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> <code>compass.core</code></h1>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> (ZarrRaster, write_pyramid, PyramidalRaster,</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                          Magnification, AnnotationStore, init_db,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                          ImageShape, Px, rasterize_polygon,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                          create_level_array, write_pyramid_attrs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                          Magnification, AnnotationStore, Annotation,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                          Point, PointSet, PolyLine, Polygon, Circle,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                          init_db, ImageShape, Px, rasterize_polygon,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                          create_level_array, write_pyramid_attrs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Dependencies: numpy, zarr, shapely, geopandas, polars, pandas, pydantic, dask. Depends on nothing else in the project.</p>
 <section id="value-types-imageshape-px" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="value-types-imageshape-px"><span class="header-section-number">5.1</span> Value types: <code>ImageShape</code>, <code>Px</code></h2>
@@ -2683,247 +2629,51 @@ viewer        -&gt; core, processing (never connector)</code></pre>
  [0 0 0 1 1]
  [0 0 0 0 1]]</code></pre>
 </section>
-<section id="annotationstore" class="level2" data-number="5.8">
-<h2 data-number="5.8" class="anchored" data-anchor-id="annotationstore"><span class="header-section-number">5.8</span> <code>AnnotationStore</code></h2>
-<p>Read-only, vectorized access to one annotation database. Bulk queries return <strong>polars DataFrames</strong> (tables, ids, scalars) or <strong>geopandas GeoDataFrames indexed by <code>object_id</code></strong> (geometry). Geometry is decoded with a single <code>shapely.from_wkb</code> call per query.</p>
-<section id="creating-a-database-to-work-with" class="level3" data-number="5.8.1">
-<h3 data-number="5.8.1" class="anchored" data-anchor-id="creating-a-database-to-work-with"><span class="header-section-number">5.8.1</span> Creating a database to work with</h3>
-<p>The bulk <em>writer</em> is not ported out of <code>legacy</code> yet. Until it is, a database can be built with <code>init_db</code> and plain SQL. This one (used by the examples below) has 1,000 cells in two groups, a region polygon, a circle and sparse marker values:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sqlite3</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shapely</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> init_db</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>init_db(<span class="st">&quot;demo.ann.sqlite&quot;</span>)</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>con <span class="op">=</span> sqlite3.<span class="ex">connect</span>(<span class="st">&quot;demo.ann.sqlite&quot;</span>)</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>con.execute(<span class="st">&quot;PRAGMA foreign_keys = ON&quot;</span>)</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>con.executemany(<span class="st">&quot;INSERT INTO meta(key, value) VALUES (?, ?)&quot;</span>,</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>                [(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;demo&quot;</span>), (<span class="st">&quot;mpp&quot;</span>, <span class="st">&quot;0.25&quot;</span>)])</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>con.execute(<span class="st">&quot;INSERT INTO layers VALUES (1, &#39;cells&#39;), (2, &#39;regions&#39;)&quot;</span>)</span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>con.execute(<span class="st">&quot;INSERT INTO groups VALUES (1, 1, &#39;tumor&#39;), (2, 1, &#39;stroma&#39;), &quot;</span></span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;(3, 2, &#39;annotated&#39;)&quot;</span>)</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add(oid, code, geom, group, name<span class="op">=</span><span class="va">None</span>, r<span class="op">=</span><span class="va">None</span>):</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    x0, y0, x1, y1 <span class="op">=</span> geom.bounds</span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> r <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:  <span class="co"># circle: bbox includes the radius</span></span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        x0, y0, x1, y1 <span class="op">=</span> x0 <span class="op">-</span> r, y0 <span class="op">-</span> r, x1 <span class="op">+</span> r, y1 <span class="op">+</span> r</span>
-<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    con.execute(<span class="st">&quot;INSERT INTO objects VALUES (?,?,?,?,?,?,?,?,?)&quot;</span>,</span>
-<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>                (oid, code, name, shapely.to_wkb(geom), r, x0, y0, x1, y1))</span>
-<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>    con.execute(<span class="st">&quot;INSERT INTO object_groups VALUES (?, ?)&quot;</span>, (oid, group))</span>
-<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
-<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(rng.uniform(<span class="dv">0</span>, <span class="dv">6000</span>, size<span class="op">=</span>(<span class="dv">1000</span>, <span class="dv">2</span>)), start<span class="op">=</span><span class="dv">1</span>):</span>
-<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    add(i, <span class="dv">1</span>, shapely.Point(x, y), group<span class="op">=</span><span class="dv">1</span> <span class="cf">if</span> x <span class="op">&lt;</span> <span class="dv">3000</span> <span class="cf">else</span> <span class="dv">2</span>, name<span class="op">=</span><span class="ss">f&quot;cell</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">&quot;</span>)</span>
-<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>add(<span class="dv">1001</span>, <span class="dv">4</span>, shapely.box(<span class="dv">500</span>, <span class="dv">500</span>, <span class="dv">2500</span>, <span class="dv">2000</span>), group<span class="op">=</span><span class="dv">3</span>, name<span class="op">=</span><span class="st">&quot;roi A&quot;</span>)</span>
-<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>add(<span class="dv">1002</span>, <span class="dv">5</span>, shapely.Point(<span class="dv">4000</span>, <span class="dv">4000</span>), group<span class="op">=</span><span class="dv">3</span>, name<span class="op">=</span><span class="st">&quot;spot&quot;</span>, r<span class="op">=</span><span class="fl">150.0</span>)</span>
-<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>con.executemany(<span class="st">&quot;INSERT INTO scalar_attributes VALUES (?, ?)&quot;</span>,</span>
-<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>                [(<span class="dv">0</span>, <span class="st">&quot;CD3&quot;</span>), (<span class="dv">1</span>, <span class="st">&quot;CD8&quot;</span>), (<span class="dv">2</span>, <span class="st">&quot;PanCK&quot;</span>)])</span>
-<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">1001</span>):</span>
-<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    ids <span class="op">=</span> np.array([<span class="dv">0</span>, <span class="dv">2</span>] <span class="cf">if</span> i <span class="op">%</span> <span class="dv">2</span> <span class="cf">else</span> [<span class="dv">1</span>], np.uint32)</span>
-<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    vals <span class="op">=</span> rng.random(ids.size).astype(np.float32)</span>
-<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>    con.execute(<span class="st">&quot;INSERT INTO object_scalar_sparse VALUES (?, ?, ?)&quot;</span>,</span>
-<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>                (i, ids.tobytes(), vals.tobytes()))</span>
-<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>con.commit()</span>
-<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a>con.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The R-tree is filled by triggers; only <code>objects</code> needs inserting.</p>
-</section>
-<section id="opening-and-browsing-the-hierarchy" class="level3" data-number="5.8.2">
-<h3 data-number="5.8.2" class="anchored" data-anchor-id="opening-and-browsing-the-hierarchy"><span class="header-section-number">5.8.2</span> Opening and browsing the hierarchy</h3>
-<p>The store opens the file read-only. Use it as a context manager (or call <code>close()</code>).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> AnnotationStore</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>store <span class="op">=</span> AnnotationStore(<span class="st">&quot;demo.ann.sqlite&quot;</span>)</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>store.meta                      <span class="co"># {&#39;schema_version&#39;: &#39;1&#39;, &#39;name&#39;: &#39;demo&#39;, &#39;mpp&#39;: &#39;0.25&#39;}</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>store.get_layers()              <span class="co"># layer_id, name</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>store.get_groups(layer_id<span class="op">=</span><span class="dv">1</span>)    <span class="co"># group_id, layer_id, name</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>store.count_objects_per_group()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>shape: (3, 4)
-┌──────────┬──────────┬────────────┬───────────┐
-│ group_id ┆ layer_id ┆ group_name ┆ n_objects │
-│ ---      ┆ ---      ┆ ---        ┆ ---       │
-│ i64      ┆ i64      ┆ str        ┆ i64       │
-╞══════════╪══════════╪════════════╪═══════════╡
-│ 1        ┆ 1        ┆ tumor      ┆ 472       │
-│ 2        ┆ 1        ┆ stroma     ┆ 528       │
-│ 3        ┆ 2        ┆ annotated  ┆ 2         │
-└──────────┴──────────┴────────────┴───────────┘</code></pre>
-<p>Names resolve to ids. Group names are unique only within a layer, so pass <code>layer_id</code> to disambiguate:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>cells <span class="op">=</span> store.get_layer_id(<span class="st">&quot;cells&quot;</span>)                     <span class="co"># 1</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>tumor <span class="op">=</span> store.get_group_id(<span class="st">&quot;tumor&quot;</span>, layer_id<span class="op">=</span>cells)     <span class="co"># 1</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>store.get_layer_id(<span class="st">&quot;nuclei&quot;</span>)</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ValueError: Unknown layer name &#39;nuclei&#39;. Available layers: cells, regions</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="viewport-queries" class="level3" data-number="5.8.3">
-<h3 data-number="5.8.3" class="anchored" data-anchor-id="viewport-queries"><span class="header-section-number">5.8.3</span> Viewport queries</h3>
-<p>All ROIs are <code>(x0, y0, x1, y1)</code> in level-0 pixels and match on bounding box intersection via the R-tree.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>roi <span class="op">=</span> (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2000</span>, <span class="dv">2000</span>)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>store.count_objects_in_roi(cells, roi)     <span class="co"># 107 — R-tree only, no geometry</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> store.get_objects_in_roi(cells, roi, group_ids<span class="op">=</span>[tumor])</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>gdf.head(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>            type    name  circle_r                  geometry
-object_id
-1          POINT   cell1       NaN  POINT (1470.754 181.037)
-13         POINT  cell13       NaN   POINT (196.729 153.311)
-18         POINT  cell18       NaN   POINT (695.879 917.332)</code></pre>
-<p><code>group_ids</code> restricts the query to the currently visible groups. The columns are always <code>type</code> (categorical), <code>name</code>, <code>circle_r</code> (NaN except circles) and <code>geometry</code>.</p>
-</section>
-<section id="fetching-by-id" class="level3" data-number="5.8.4">
-<h3 data-number="5.8.4" class="anchored" data-anchor-id="fetching-by-id"><span class="header-section-number">5.8.4</span> Fetching by id</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>store.get_object_ids_in_layer(cells)            <span class="co"># np.ndarray[int64], 1000 ids</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>store.get_object_ids_in_group(tumor)            <span class="co"># 472 ids</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>store.get_object_ids_in_roi(cells, roi)         <span class="co"># array([ 1, 13, 18, 30, 32, ...])</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>regions <span class="op">=</span> store.get_objects(store.get_object_ids_in_layer(<span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>              type   name  circle_r                                       geometry
-object_id
-1001       POLYGON  roi A       NaN  POLYGON ((2500 500, 2500 2000, 500 2000, 500 5...
-1002        CIRCLE   spot     150.0  POLYGON ((4150 4000, 4147.118 3970.736, 4138.5...</code></pre>
-<p>Circles are decoded to polygonal disks by default so every geometry can be drawn uniformly. Pass <code>circles_as_disks=False</code> to keep the center points (the radius stays in <code>circle_r</code>):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>store.get_objects([<span class="dv">1002</span>], circles_as_disks<span class="op">=</span><span class="va">False</span>).geometry.iloc[<span class="dv">0</span>].geom_type   <span class="co"># &#39;Point&#39;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Id lists of any length work; queries are chunked below SQLite’s bound-parameter limit.</p>
-</section>
-<section id="bounding-boxes-and-memberships" class="level3" data-number="5.8.5">
-<h3 data-number="5.8.5" class="anchored" data-anchor-id="bounding-boxes-and-memberships"><span class="header-section-number">5.8.5</span> Bounding boxes and memberships</h3>
-<p>When geometry isn’t needed (coarse rendering, density maps, hit-testing), skip decoding entirely:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>store.get_bboxes(layer_id<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>┌───────────┬────────┬────────┬────────┬────────┐
-│ object_id ┆ min_x  ┆ min_y  ┆ max_x  ┆ max_y  │
-╞═══════════╪════════╪════════╪════════╪════════╡
-│ 1001      ┆ 500.0  ┆ 500.0  ┆ 2500.0 ┆ 2000.0 │
-│ 1002      ┆ 3850.0 ┆ 3850.0 ┆ 4150.0 ┆ 4150.0 │
-└───────────┴────────┴────────┴────────┴────────┘</code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>store.get_memberships([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1001</span>])   <span class="co"># object_id, group_id (all objects if omitted)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="sparse-per-object-scalars-expression-profiles" class="level3" data-number="5.8.6">
-<h3 data-number="5.8.6" class="anchored" data-anchor-id="sparse-per-object-scalars-expression-profiles"><span class="header-section-number">5.8.6</span> Sparse per-object scalars (expression profiles)</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>store.get_scalar_attribute_names()      <span class="co"># attr_id, attr_name</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>store.get_scalar_data_long([<span class="dv">1</span>, <span class="dv">2</span>])      <span class="co"># COO form</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>┌───────────┬─────────┬──────────┐
-│ object_id ┆ attr_id ┆ value    │
-╞═══════════╪═════════╪══════════╡
-│ 1         ┆ 0       ┆ 0.501237 │
-│ 1         ┆ 2       ┆ 0.419153 │
-│ 2         ┆ 1       ┆ 0.012871 │
-└───────────┴─────────┴──────────┘</code></pre>
-<p>Wide form, restricted to the attributes you actually need (with ~20,000 genes, always restrict):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>store.get_scalar_data(gdf.index.to_numpy()[:<span class="dv">4</span>], attributes<span class="op">=</span>[<span class="st">&quot;CD3&quot;</span>, <span class="st">&quot;CD8&quot;</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>┌───────────┬──────────┬──────────┐
-│ object_id ┆ CD3      ┆ CD8      │
-╞═══════════╪══════════╪══════════╡
-│ 1         ┆ 0.501237 ┆ null     │
-│ 13        ┆ 0.393233 ┆ null     │
-│ 18        ┆ null     ┆ 0.308101 │
-│ 30        ┆ null     ┆ 0.613048 │
-└───────────┴──────────┴──────────┘</code></pre>
-<p>Absent values are <code>null</code>. Columns follow the order attributes appear in the data, so select by name rather than position. Objects with no values at all get no row.</p>
-</section>
-<section id="method-summary" class="level3" data-number="5.8.7">
-<h3 data-number="5.8.7" class="anchored" data-anchor-id="method-summary"><span class="header-section-number">5.8.7</span> Method summary</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Method</th>
-<th>Returns</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>meta</code></td>
-<td><code>dict[str, str]</code></td>
-</tr>
-<tr class="even">
-<td><code>get_layers()</code></td>
-<td>polars: <code>layer_id</code>, <code>name</code></td>
-</tr>
-<tr class="odd">
-<td><code>get_groups(layer_id=None)</code></td>
-<td>polars: <code>group_id</code>, <code>layer_id</code>, <code>name</code></td>
-</tr>
-<tr class="even">
-<td><code>get_layer_id(name)</code>, <code>get_group_id(name, layer_id=None)</code></td>
-<td><code>int</code> (<code>ValueError</code> if unknown)</td>
-</tr>
-<tr class="odd">
-<td><code>count_objects_per_group()</code></td>
-<td>polars: <code>group_id</code>, <code>layer_id</code>, <code>group_name</code>, <code>n_objects</code></td>
-</tr>
-<tr class="even">
-<td><code>count_objects_in_roi(layer_id, roi)</code></td>
-<td><code>int</code></td>
-</tr>
-<tr class="odd">
-<td><code>get_object_ids_in_layer / _in_group / _in_roi(...)</code></td>
-<td><code>np.ndarray[int64]</code></td>
-</tr>
-<tr class="even">
-<td><code>get_objects(ids, circles_as_disks=True)</code></td>
-<td>GeoDataFrame</td>
-</tr>
-<tr class="odd">
-<td><code>get_objects_in_roi(layer_id, roi, group_ids=None, circles_as_disks=True)</code></td>
-<td>GeoDataFrame</td>
-</tr>
-<tr class="even">
-<td><code>get_bboxes(layer_id=None)</code></td>
-<td>polars: <code>object_id</code>, <code>min_x</code>, <code>min_y</code>, <code>max_x</code>, <code>max_y</code></td>
-</tr>
-<tr class="odd">
-<td><code>get_memberships(ids=None)</code></td>
-<td>polars: <code>object_id</code>, <code>group_id</code></td>
-</tr>
-<tr class="even">
-<td><code>get_scalar_attribute_names()</code></td>
-<td>polars: <code>attr_id</code>, <code>attr_name</code></td>
-</tr>
-<tr class="odd">
-<td><code>get_scalar_data_long(ids)</code></td>
-<td>polars: <code>object_id</code>, <code>attr_id</code>, <code>value</code></td>
-</tr>
-<tr class="even">
-<td><code>get_scalar_data(ids, attributes=None)</code></td>
-<td>polars, wide: <code>object_id</code> + one column per attribute</td>
-</tr>
-</tbody>
-</table>
-<p>Module-level constants: <code>SQLITE_DDL</code>, <code>SCHEMA_VERSION</code> (<code>&quot;1&quot;</code>), <code>ANNOT_TYPE_CODE</code>, <code>ANNOT_CODE_TYPE</code>.</p>
-</section>
+<section id="annotations-compass.core.annot" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="annotations-compass.core.annot"><span class="header-section-number">5.8</span> Annotations: <code>compass.core.annot</code></h2>
+<p>Annotation objects, transforms and the annotation store. Everything is in <a href="annotations.md"><code>annotations.md</code></a>; in short:</p>
+<ul>
+<li><strong>Objects</strong> — <code>Point</code>, <code>PointSet</code>, <code>PolyLine</code>, <code>Polygon</code>, <code>Circle</code>: build and inspect single objects, with <code>translate</code>, <code>scale</code>, <code>resize</code>, <code>affine</code>.</li>
+<li><strong>Frames</strong> — <code>compass.core.annot.transform</code> applies the same transforms to whole GeoDataFrames in one numpy pass.</li>
+<li><strong>Store</strong> — <code>AnnotationStore(path, mode=&quot;r&quot; | &quot;r+&quot; | &quot;w&quot;)</code>: spatial and hierarchy queries returning GeoDataFrames / polars frames; adding, updating and removing objects, groups, layers and scalars; whole-store transforms (including an import record’s matrix); in-memory stores.</li>
+<li><strong>Legacy API</strong> — <code>Annotation</code>, <code>save_annotation</code>, <code>load_annotation</code>, <code>query_*</code>, <code>fetch_*</code>, on top of the store.</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> AnnotationStore, Circle</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> AnnotationStore(<span class="st">&quot;slide.ann.sqlite&quot;</span>, mode<span class="op">=</span><span class="st">&quot;w&quot;</span>) <span class="im">as</span> store:</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    ids <span class="op">=</span> store.add_objects(cells_gdf, layer<span class="op">=</span><span class="st">&quot;cells&quot;</span>, group<span class="op">=</span><span class="st">&quot;tumor&quot;</span>, data<span class="op">=</span>markers)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    store.add_object(Circle((<span class="dv">4000</span>, <span class="dv">4000</span>), <span class="fl">150.0</span>), layer<span class="op">=</span><span class="st">&quot;regions&quot;</span>, group<span class="op">=</span><span class="st">&quot;spots&quot;</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> AnnotationStore(<span class="st">&quot;slide.ann.sqlite&quot;</span>) <span class="im">as</span> store:          <span class="co"># read-only</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    gdf <span class="op">=</span> store.get_objects_in_roi(store.get_layer_id(<span class="st">&quot;cells&quot;</span>), (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2000</span>, <span class="dv">2000</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="compass.connector" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> <code>compass.connector</code></h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> (wsi2zarr, ometiff2zarr, raster2tiff,</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                               build_omexml, plan_levels, resolve_crop,</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                               box_downsample)</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector.wsi <span class="im">import</span> WSI   <span class="co"># imports OpenSlide</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> (wsi2zarr, ometiff2zarr, raster2tiff,</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>                               build_omexml, plan_levels, resolve_crop,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                               box_downsample)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector.wsi <span class="im">import</span> WSI   <span class="co"># imports OpenSlide</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>One-shot ingestion and interchange tools. Never imported by the viewer or by <code>processing</code>. Needs <code>uv sync --extra connector</code>; <code>wsi2zarr</code> and <code>raster2tiff</code> also need the libvips system library, while <code>ometiff2zarr</code> only needs tifffile (pure Python). <code>plan_levels</code>, <code>resolve_crop</code> and <code>box_downsample</code> are pure Python.</p>
 <section id="wsi-ingestion-only-slide-reader" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="wsi-ingestion-only-slide-reader"><span class="header-section-number">6.1</span> <code>WSI</code> — ingestion-only slide reader</h2>
 <p>An OpenSlide-backed <code>PyramidalRaster</code>, used by <code>wsi2zarr</code> to read metadata. <strong>Do not use it as a runtime raster.</strong> OpenSlide and Bio-Formats disagree on MRXS coordinate offsets, so OpenSlide-read pixels are only trusted after the converted pyramid has been checked against known landmark annotations (architecture §3).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector.wsi <span class="im">import</span> WSI      <span class="co"># needs OpenSlide</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>wsi <span class="op">=</span> WSI(<span class="st">&quot;slide.mrxs&quot;</span>)</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>wsi.info</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="co"># {&#39;objective_power&#39;: 20.0, &#39;width&#39;: ..., &#39;height&#39;: ...,</span></span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;mpp_x&#39;: ..., &#39;mpp_y&#39;: ..., &#39;n_levels&#39;: ..., &#39;magnification_step&#39;: ...,</span></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;roi&#39;: {&#39;x0&#39;: ..., &#39;y0&#39;: ..., &#39;width&#39;: ..., &#39;height&#39;: ...},  # {} if none</span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;background&#39;: 255}</span></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>wsi.get_region_px(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">512</span>, <span class="dv">512</span>, level<span class="op">=</span><span class="dv">2</span>)  <span class="co"># RGB; transparent pixels -&gt; background</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector.wsi <span class="im">import</span> WSI      <span class="co"># needs OpenSlide</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>wsi <span class="op">=</span> WSI(<span class="st">&quot;slide.mrxs&quot;</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>wsi.info</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co"># {&#39;objective_power&#39;: 20.0, &#39;width&#39;: ..., &#39;height&#39;: ...,</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;mpp_x&#39;: ..., &#39;mpp_y&#39;: ..., &#39;n_levels&#39;: ..., &#39;magnification_step&#39;: ...,</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;roi&#39;: {&#39;x0&#39;: ..., &#39;y0&#39;: ..., &#39;width&#39;: ..., &#39;height&#39;: ...},  # {} if none</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;background&#39;: 255}</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>wsi.get_region_px(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">512</span>, <span class="dv">512</span>, level<span class="op">=</span><span class="dv">2</span>)  <span class="co"># RGB; transparent pixels -&gt; background</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="wsi2zarr-bake-a-slide-into-the-zarr-pyramid" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="wsi2zarr-bake-a-slide-into-the-zarr-pyramid"><span class="header-section-number">6.2</span> <code>wsi2zarr</code> — bake a slide into the Zarr pyramid</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>wsi2zarr(wsi_path, dst_path, crop<span class="op">=</span><span class="va">False</span>, downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>,</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>         chunk_size<span class="op">=</span><span class="dv">512</span>, shard_factor<span class="op">=</span><span class="dv">8</span>, tmp_dir<span class="op">=</span><span class="va">None</span>, overwrite<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>wsi2zarr(wsi_path, dst_path, crop<span class="op">=</span><span class="va">False</span>, downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>         chunk_size<span class="op">=</span><span class="dv">512</span>, shard_factor<span class="op">=</span><span class="dv">8</span>, tmp_dir<span class="op">=</span><span class="va">None</span>, overwrite<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>         start_level<span class="op">=</span><span class="dv">0</span>, provenance<span class="op">=</span><span class="va">None</span>) <span class="op">-&gt;</span> <span class="bu">dict</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Parameter</th>
@@ -2959,25 +2709,35 @@ object_id
 <td><code>overwrite</code></td>
 <td>Replace an existing store; otherwise an existing one raises</td>
 </tr>
+<tr class="even">
+<td><code>start_level</code></td>
+<td>Start from this level of the planned pyramid; see <a href="#partial-pyramids-and-the-import-record">Partial pyramids and the import record</a></td>
+</tr>
+<tr class="odd">
+<td><code>provenance</code></td>
+<td>Extra fields merged into the import record</td>
+</tr>
 </tbody>
 </table>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> wsi2zarr</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> logging</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.INFO)    <span class="co"># progress: &quot;generating level N&quot;, &quot;copying level N&quot;</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>wsi2zarr(<span class="st">&quot;slide.mrxs&quot;</span>, <span class="st">&quot;/data/slides/slide.zarr&quot;</span>, crop<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Returns the import record, which is also stored in the group’s <code>import</code> attribute.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> wsi2zarr</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> logging</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.INFO)    <span class="co"># progress: &quot;generating level N&quot;, &quot;copying level N&quot;</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>wsi2zarr(<span class="st">&quot;slide.mrxs&quot;</span>, <span class="st">&quot;/data/slides/slide.zarr&quot;</span>, crop<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>How it works.</strong> Level 0 is the (optionally cropped) slide, flattened onto the background color and written to a temporary uncompressed <code>level0.v</code>. Each further level is a pyvips downscale of the previous <code>.v</code>. Each level is then copied into Zarr <strong>one whole shard at a time</strong>. Shards are never partially written, and the copy step’s memory stays at about one shard (~50 MB at the defaults) whatever the slide size. The resulting pyramid is regenerated rather than copied from the scanner’s own levels, so the level structure is always the same.</p>
 <p><strong>Disk and memory.</strong> The <code>.v</code> intermediates add up to a few times the uncompressed size of level 0 (tens of GB for a large slide), and they are written and read back several times. If <code>dst_path</code> is on a slow external/USB or network drive, put them on a fast local disk:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>wsi2zarr(<span class="st">&quot;slide.mrxs&quot;</span>, <span class="st">&quot;/media/usb/slide.zarr&quot;</span>, tmp_dir<span class="op">=</span><span class="st">&quot;/home/me/scratch&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>wsi2zarr(<span class="st">&quot;slide.mrxs&quot;</span>, <span class="st">&quot;/media/usb/slide.zarr&quot;</span>, tmp_dir<span class="op">=</span><span class="st">&quot;/home/me/scratch&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Otherwise the OS write cache fills with data waiting for the slow disk and squeezes the RAM available to the process. Don’t point <code>tmp_dir</code> at a RAM-backed <code>/tmp</code> (tmpfs, the default on several Linux distributions), because the intermediates are slide-sized. A finished Zarr store is a plain directory, so converting locally and copying it afterwards also works.</p>
 <p><strong>Verify before trusting.</strong> For each new scanner/format combination, check a few landmark annotations against the converted raster (architecture §3).</p>
 </section>
 <section id="ometiff2zarr-bake-an-ome-tiff-into-the-zarr-pyramid" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="ometiff2zarr-bake-an-ome-tiff-into-the-zarr-pyramid"><span class="header-section-number">6.3</span> <code>ometiff2zarr</code> — bake an OME-TIFF into the Zarr pyramid</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(src_path, dst_path, series<span class="op">=</span><span class="va">None</span>, z<span class="op">=</span><span class="va">None</span>, t<span class="op">=</span><span class="va">None</span>, crop<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>             mpp<span class="op">=</span><span class="va">None</span>, objective_power<span class="op">=</span><span class="va">None</span>, channel_names<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>             downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>, chunk_size<span class="op">=</span><span class="dv">512</span>,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>             shard_factor<span class="op">=</span><span class="dv">8</span>, overwrite<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(src_path, dst_path, series<span class="op">=</span><span class="va">None</span>, z<span class="op">=</span><span class="va">None</span>, t<span class="op">=</span><span class="va">None</span>, crop<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>             mpp<span class="op">=</span><span class="va">None</span>, objective_power<span class="op">=</span><span class="va">None</span>, channel_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>             downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>, chunk_size<span class="op">=</span><span class="dv">512</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>             shard_factor<span class="op">=</span><span class="dv">8</span>, overwrite<span class="op">=</span><span class="va">False</span>, start_level<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>             provenance<span class="op">=</span><span class="va">None</span>) <span class="op">-&gt;</span> <span class="bu">dict</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>For OME-TIFF files: exports from other tools (QuPath, Bio-Formats <code>bfconvert</code>, <code>raster2tiff</code>), and multiplex/fluorescence images with many <code>uint16</code> channels. Reads through tifffile — no pyvips, no OpenSlide.</p>
 <table class="caption-top table">
 <colgroup>
@@ -3020,21 +2780,21 @@ object_id
 <td>Integer scale between consecutive levels (≥ 2)</td>
 </tr>
 <tr class="even">
-<td><code>min_size</code>, <code>chunk_size</code>, <code>shard_factor</code>, <code>overwrite</code></td>
-<td>As for <code>wsi2zarr</code></td>
+<td><code>min_size</code>, <code>chunk_size</code>, <code>shard_factor</code>, <code>overwrite</code>, <code>start_level</code>, <code>provenance</code></td>
+<td>As for <code>wsi2zarr</code> (with a start level, the base level is box-averaged from full resolution while copying)</td>
 </tr>
 </tbody>
 </table>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> ometiff2zarr</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="co"># brightfield RGB export, calibrated</span></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;slide.ome.tif&quot;</span>, <span class="st">&quot;slide.zarr&quot;</span>)</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="co"># multiplex immunofluorescence, uint16, no magnification in the file</span></span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;mif.ome.tiff&quot;</span>, <span class="st">&quot;mif.zarr&quot;</span>, objective_power<span class="op">=</span><span class="fl">20.0</span>)</span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="co"># a z-stack: pick the plane explicitly</span></span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;stack.ome.tif&quot;</span>, <span class="st">&quot;stack.zarr&quot;</span>, z<span class="op">=</span><span class="dv">3</span>, mpp<span class="op">=</span><span class="fl">0.325</span>, objective_power<span class="op">=</span><span class="fl">40.0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> ometiff2zarr</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># brightfield RGB export, calibrated</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;slide.ome.tif&quot;</span>, <span class="st">&quot;slide.zarr&quot;</span>)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="co"># multiplex immunofluorescence, uint16, no magnification in the file</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;mif.ome.tiff&quot;</span>, <span class="st">&quot;mif.zarr&quot;</span>, objective_power<span class="op">=</span><span class="fl">20.0</span>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="co"># a z-stack: pick the plane explicitly</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>ometiff2zarr(<span class="st">&quot;stack.ome.tif&quot;</span>, <span class="st">&quot;stack.zarr&quot;</span>, z<span class="op">=</span><span class="dv">3</span>, mpp<span class="op">=</span><span class="fl">0.325</span>, objective_power<span class="op">=</span><span class="fl">40.0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Metadata.</strong> Read from the OME-XML of the chosen image:</p>
 <ul>
 <li><em>mpp</em>: <code>Pixels/@PhysicalSizeX|Y</code>, converted from <code>PhysicalSizeXUnit</code> (pm, Å, nm, µm, mm, cm, m; µm if absent). If only one axis is given it is used for both.</li>
@@ -3045,35 +2805,114 @@ object_id
 <p><strong>Axes and dtype.</strong> Any layout tifffile reports — interleaved <code>YXS</code> (RGB), planar <code>CYX</code>, <code>TCZYX</code>, … — is normalized to <code>(height, width, channels)</code>; single-channel images are stored as <code>(h, w, 1)</code>. The dtype is kept (<code>uint16</code> stays <code>uint16</code>). Channels are not split across chunks, so a chunk of a 40-channel <code>uint16</code> image is 40 × 512 × 512 × 2 bytes (20 MB) uncompressed.</p>
 <p><strong>How it works.</strong> As with <code>wsi2zarr</code>, the pyramid is regenerated rather than copied from the file’s own levels. Level 0 is copied one whole shard at a time from tifffile’s lazy Zarr view of the TIFF tiles. Each further level is built from the previous <strong>Zarr</strong> level: an output shard maps onto a <code>downscale_factor</code>-times larger, shard-aligned block above, which is box-averaged (mean over <code>f × f</code> pixels, integers rounded). There are no temporary files and no <code>tmp_dir</code>; peak memory is about <code>downscale_factor²</code> shards (~200 MB at the defaults for RGB <code>uint8</code>). Box averaging differs slightly from the pyvips resampling <code>wsi2zarr</code> uses, so lower levels of the two paths are not bit-identical.</p>
 <p><code>box_downsample(block, factor)</code> is the filter on its own:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>box_downsample(np.array([[<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">1</span>, <span class="dv">1</span>]], np.uint8), <span class="dv">2</span>)   <span class="co"># [[1]]  (0.75 rounds up)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>box_downsample(np.array([[<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">1</span>, <span class="dv">1</span>]], np.uint8), <span class="dv">2</span>)   <span class="co"># [[1]]  (0.75 rounds up)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Series are matched to OME <code>Image</code> elements by index (tifffile builds one series per OME image, in order); a file mixing OME and non-OME series may pair metadata with the wrong image.</p>
 </section>
-<section id="planning-helpers" class="level2" data-number="6.4">
-<h2 data-number="6.4" class="anchored" data-anchor-id="planning-helpers"><span class="header-section-number">6.4</span> Planning helpers</h2>
-<p>The pure functions <code>wsi2zarr</code> and <code>ometiff2zarr</code> use to decide what it will do — useful to preview a conversion:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> plan_levels, resolve_crop</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, roi<span class="op">=</span>{}, crop<span class="op">=</span><span class="va">True</span>)        <span class="co"># (0, 0, 1000, 800): no ROI -&gt; whole image</span></span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, roi<span class="op">=</span>{<span class="st">&#39;x0&#39;</span>: <span class="dv">10</span>, <span class="st">&#39;y0&#39;</span>: <span class="dv">20</span>, <span class="st">&#39;width&#39;</span>: <span class="dv">300</span>, <span class="st">&#39;height&#39;</span>: <span class="dv">400</span>}, crop<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (10, 20, 300, 400)</span></span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, {}, (<span class="op">-</span><span class="dv">5</span>, <span class="dv">900</span>, <span class="dv">5000</span>, <span class="dv">100</span>)) <span class="co"># (0, 799, 1000, 1): clamped</span></span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>plan_levels(<span class="dv">1400</span>, <span class="dv">1100</span>, downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>)</span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="co"># [{&#39;w&#39;: 1400, &#39;h&#39;: 1100, &#39;x0&#39;: 0, &#39;y0&#39;: 0},</span></span>
-<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="co">#  {&#39;w&#39;: 700,  &#39;h&#39;: 550,  &#39;x0&#39;: 0, &#39;y0&#39;: 0},</span></span>
-<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a><span class="co">#  {&#39;w&#39;: 350,  &#39;h&#39;: 275,  &#39;x0&#39;: 0, &#39;y0&#39;: 0}]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="partial-pyramids-and-the-import-record" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="partial-pyramids-and-the-import-record"><span class="header-section-number">6.4</span> Partial pyramids and the import record</h2>
+<p><strong>Starting level.</strong> <code>start_level=k</code> imports from level <em>k</em> of the pyramid that would otherwise be built (the plan <code>wsi_import.py --info</code> prints). That level becomes level 0, so the store has <em>k</em> fewer levels, and its calibration is scaled to match: <code>mpp × factor^k</code>, <code>objective_power ÷ factor^k</code>. The crop is still given in source level-0 coordinates. Its origin is snapped down to the start level’s pixel grid, so the source → output mapping is exact.</p>
+<ul>
+<li><code>wsi2zarr</code> reads the base image from the coarsest <strong>stored</strong> slide level whose downsample divides <code>factor^k</code> and only resizes the remainder. On a scanner with ×2 levels, importing from level 3 never reads full resolution: a 57,344 × 50,944 NDPI imports from level 3 in about 4 s, pixel-identical to OpenSlide’s level 3.</li>
+<li><code>ometiff2zarr</code> box-averages from full resolution while copying, in bounded sub-reads.</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> closest_level_for_mpp, plan_import, plan_levels</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>plan <span class="op">=</span> plan_import(<span class="dv">1500</span>, <span class="dv">1200</span>, crop<span class="op">=</span>(<span class="dv">9</span>, <span class="dv">17</span>, <span class="dv">1400</span>, <span class="dv">1100</span>), start_level<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>plan[<span class="st">&quot;downsample&quot;</span>], plan[<span class="st">&quot;crop&quot;</span>], plan[<span class="st">&quot;levels&quot;</span>]</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (2, (8, 16, 1400, 1100), [{&#39;w&#39;: 700, &#39;h&#39;: 550}, {&#39;w&#39;: 350, &#39;h&#39;: 275}])</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="co"># level of the plan closest to 1 um/px (by ratio; ties -&gt; finer)</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>closest_level_for_mpp(<span class="fl">0.25</span>, <span class="fl">1.0</span>, nlevels<span class="op">=</span><span class="bu">len</span>(plan[<span class="st">&quot;planned&quot;</span>]))   <span class="co"># 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Import record.</strong> Both converters return a JSON-serializable record and store it in the group’s <code>import</code> attribute (<code>ZarrRaster(dst).info[&quot;import&quot;]</code>):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>record_version</code>, <code>timestamp</code></td>
+<td>Layout version (1); ISO-8601 time with time zone</td>
+</tr>
+<tr class="even">
+<td><code>source</code></td>
+<td><code>path</code> (absolute), <code>name</code>, <code>format</code> (<code>wsi</code>/<code>ometiff</code>), <code>width</code>, <code>height</code>, <code>mpp_x</code>, <code>mpp_y</code>, <code>objective_power</code>; OME-TIFF adds <code>series</code>, <code>z</code>, <code>t</code>, <code>dtype</code>, <code>channel_names</code></td>
+</tr>
+<tr class="odd">
+<td><code>crop</code></td>
+<td><code>mode</code> (<code>none</code>, <code>roi</code>, <code>explicit</code>, <code>detect</code>), effective <code>x0</code>, <code>y0</code>, <code>width</code>, <code>height</code> at <strong>source level 0</strong> (the full extent if not cropped), and the <code>requested</code> crop before snapping</td>
+</tr>
+<tr class="even">
+<td><code>start</code></td>
+<td><code>level</code>, <code>downsample</code>, <code>mpp_x</code>, <code>mpp_y</code> of the start level (+ <code>requested_level</code> / <code>requested_mpp</code> from the CLI)</td>
+</tr>
+<tr class="odd">
+<td><code>output</code></td>
+<td><code>path</code>, <code>format_version</code>, <code>levels</code>, <code>width</code>, <code>height</code>, <code>mpp_x</code>, <code>mpp_y</code>, <code>objective_power</code>, <code>downscale_factor</code>, <code>chunk_size</code>, <code>shard_factor</code>, <code>level_shapes</code></td>
+</tr>
+<tr class="even">
+<td><code>transform</code></td>
+<td>Source level-0 → output level-0 pixels (below)</td>
+</tr>
+<tr class="odd">
+<td><code>tool</code>, <code>dry_run</code></td>
+<td>Added by <code>wsi_import.py</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>transform.type</code> is one of the controlled vocabulary <code>compass.connector.TRANSFORM_TYPES</code> = <code>shift</code>, <code>rotate</code>, <code>scale</code>, <code>affine</code>: the most specific type that describes the mapping. <code>x_out = (x_src - crop.x0) / start.downsample</code> (same for y) is a <code>shift</code> (<code>dx</code>, <code>dy</code>) without a start level, a <code>scale</code> (<code>sx</code>, <code>sy</code>) without a crop offset, and <code>affine</code> otherwise. <code>matrix</code> (2 × 3, row-major, applied to <code>(x, y, 1)</code>) is always present, so a consumer can ignore <code>type</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> ZarrRaster(<span class="st">&quot;slide.zarr&quot;</span>).info[<span class="st">&quot;import&quot;</span>][<span class="st">&quot;transform&quot;</span>]</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> np.asarray(t[<span class="st">&quot;matrix&quot;</span>])</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>xy_out <span class="op">=</span> (M <span class="op">@</span> np.c_[xy_src, np.ones(<span class="bu">len</span>(xy_src))].T).T   <span class="co"># (N, 2) points</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Command line.</strong> <code>src/tools/wsi_import.py</code> exposes both:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># from planned level 2, or from the level closest to 1 um/px</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/tools/wsi_import.py slide.ndpi <span class="at">--start-level</span> 2</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/tools/wsi_import.py slide.ndpi <span class="at">--start-mpp</span> 1.0 <span class="at">--crop</span><span class="op">=</span>detect</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="co"># print the record (stdout has only the record; messages go to stderr)</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python src/tools/wsi_import.py slide.ndpi <span class="at">--start-mpp</span> 1.0 <span class="at">--show-meta</span> <span class="op">&gt;</span> rec.json</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="co"># dry run: the record of what would be imported, as shell variables</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="bu">eval</span> <span class="st">&quot;</span><span class="va">$(</span><span class="ex">uv</span> run python src/tools/wsi_import.py slide.ndpi <span class="at">--start-mpp</span> 1.0 <span class="dt">\</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">--info</span> <span class="at">--show-meta</span> <span class="at">--meta-format</span> kv<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$CROP_X0</span><span class="st"> </span><span class="va">$CROP_Y0</span><span class="st"> </span><span class="va">$START_DOWNSAMPLE</span><span class="st"> </span><span class="va">$TRANSFORM_TYPE</span><span class="st"> </span><span class="va">$TRANSFORM_MATRIX</span><span class="st">&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>--meta-format kv</code> prints one shell-quoted <code>KEY=value</code> per line. Keys are the JSON paths, upper-cased and joined by <code>_</code> (<code>OUTPUT_MPP_X</code>, <code>CROP_REQUESTED_X0</code>); lists are space-separated (<code>TRANSFORM_MATRIX=&#39;0.125 0.0 -82.0 0.0 0.125 -396.0&#39;</code>) and null is empty. An out-of-range <code>--start-level</code> stops before any work, listing the planned levels with their µm/px.</p>
 </section>
-<section id="raster2tiff-ome-tiff-export" class="level2" data-number="6.5">
-<h2 data-number="6.5" class="anchored" data-anchor-id="raster2tiff-ome-tiff-export"><span class="header-section-number">6.5</span> <code>raster2tiff</code> — OME-TIFF export</h2>
+<section id="planning-helpers" class="level2" data-number="6.5">
+<h2 data-number="6.5" class="anchored" data-anchor-id="planning-helpers"><span class="header-section-number">6.5</span> Planning helpers</h2>
+<p>The pure functions <code>wsi2zarr</code> and <code>ometiff2zarr</code> use to decide what it will do — useful to preview a conversion:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> plan_levels, resolve_crop</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, roi<span class="op">=</span>{}, crop<span class="op">=</span><span class="va">True</span>)        <span class="co"># (0, 0, 1000, 800): no ROI -&gt; whole image</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, roi<span class="op">=</span>{<span class="st">&#39;x0&#39;</span>: <span class="dv">10</span>, <span class="st">&#39;y0&#39;</span>: <span class="dv">20</span>, <span class="st">&#39;width&#39;</span>: <span class="dv">300</span>, <span class="st">&#39;height&#39;</span>: <span class="dv">400</span>}, crop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (10, 20, 300, 400)</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>resolve_crop(<span class="dv">1000</span>, <span class="dv">800</span>, {}, (<span class="op">-</span><span class="dv">5</span>, <span class="dv">900</span>, <span class="dv">5000</span>, <span class="dv">100</span>)) <span class="co"># (0, 799, 1000, 1): clamped</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>plan_levels(<span class="dv">1400</span>, <span class="dv">1100</span>, downscale_factor<span class="op">=</span><span class="dv">2</span>, min_size<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="co"># [{&#39;w&#39;: 1400, &#39;h&#39;: 1100, &#39;x0&#39;: 0, &#39;y0&#39;: 0},</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="co">#  {&#39;w&#39;: 700,  &#39;h&#39;: 550,  &#39;x0&#39;: 0, &#39;y0&#39;: 0},</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="co">#  {&#39;w&#39;: 350,  &#39;h&#39;: 275,  &#39;x0&#39;: 0, &#39;y0&#39;: 0}]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="raster2tiff-ome-tiff-export" class="level2" data-number="6.6">
+<h2 data-number="6.6" class="anchored" data-anchor-id="raster2tiff-ome-tiff-export"><span class="header-section-number">6.6</span> <code>raster2tiff</code> — OME-TIFF export</h2>
 <p>Zarr is the internal format. For QuPath, ASAP, MIKAIA and clinical viewers, export a pyramidal, tiled, LZW-compressed BigTIFF with OME-XML metadata:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> raster2tiff</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> raster2tiff(ZarrRaster(<span class="st">&quot;slide.zarr&quot;</span>), <span class="st">&quot;slide.tiff&quot;</span>,</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>                  start_level<span class="op">=</span><span class="dv">0</span>,          <span class="co"># highest resolution to export</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>                  tile_shape<span class="op">=</span>(<span class="dv">1024</span>, <span class="dv">1024</span>),</span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                  minimal_omexml<span class="op">=</span><span class="va">True</span>,    <span class="co"># best compatibility (MIKAIA needs it)</span></span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>                  overwrite<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.connector <span class="im">import</span> raster2tiff</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> raster2tiff(ZarrRaster(<span class="st">&quot;slide.zarr&quot;</span>), <span class="st">&quot;slide.tiff&quot;</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                  start_level<span class="op">=</span><span class="dv">0</span>,          <span class="co"># highest resolution to export</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                  tile_shape<span class="op">=</span>(<span class="dv">1024</span>, <span class="dv">1024</span>),</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                  minimal_omexml<span class="op">=</span><span class="va">True</span>,    <span class="co"># best compatibility (MIKAIA needs it)</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                  overwrite<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The output must end in <code>.tiff</code>. Only <code>uint8</code>/<code>uint16</code> RGB rasters are supported. <code>build_omexml(...)</code> produces the fuller OME-XML used with <code>minimal_omexml=False</code>.</p>
 <p><strong>Memory:</strong> <code>raster2tiff</code> loads the whole <code>start_level</code> into RAM before handing it to pyvips — about 3 bytes × width × height (30 GB for a 100,000 × 100,000 slide). For large slides, export from <code>start_level=1</code> or higher, or run it on a machine with enough RAM.</p>
 </section>
@@ -3084,14 +2923,14 @@ object_id
 </section>
 <section id="compass.viewer" class="level1" data-number="8">
 <h1 data-number="8"><span class="header-section-number">8</span> <code>compass.viewer</code></h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState, TileGrid, TileCache, TileFetcher, TileKey</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer.canvas <span class="im">import</span> SlideCanvas   <span class="co"># needs vispy + OpenGL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState, TileGrid, TileCache, TileFetcher, TileKey</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer.canvas <span class="im">import</span> SlideCanvas   <span class="co"># needs vispy + OpenGL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The package <code>__init__</code> is GUI-free: state, tile machinery and navigation maths work (and are tested) without Qt or OpenGL. Only <code>compass.viewer.canvas</code>, <code>compass.viewer.inset</code> and <code>compass.viewer.app</code> touch vispy/Qt.</p>
 <p>This section is the API reference for the building blocks. The user guide (every key and mouse binding, the info bar, the thumbnail) and the internals (rendering pipeline, navigation model, testing, vispy pitfalls) are in <a href="viewer.md"><code>viewer.md</code></a>.</p>
 <section id="running-the-viewer" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="running-the-viewer"><span class="header-section-number">8.1</span> Running the viewer</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--extra</span> viewer</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> compass.viewer slide.zarr [--tile-size 512] [--cache-mb 768] [--workers 2] <span class="pp">[-</span><span class="ss">v</span><span class="pp">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--extra</span> viewer</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> compass.viewer slide.zarr [--tile-size 512] [--cache-mb 768] [--workers 2] <span class="pp">[-</span><span class="ss">v</span><span class="pp">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 33%">
@@ -3195,83 +3034,83 @@ object_id
 </tbody>
 </table>
 <p><code>state.scale</code> is the derived zoom: device pixels per level-0 pixel.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>state <span class="op">=</span> ViewerState()</span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>state.events.selected_ids.<span class="ex">connect</span>(<span class="kw">lambda</span> ids: <span class="bu">print</span>(<span class="st">&quot;selected -&gt;&quot;</span>, <span class="bu">sorted</span>(ids)))</span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>state.selected_ids <span class="op">=</span> <span class="bu">frozenset</span>({<span class="dv">7</span>, <span class="dv">42</span>})   <span class="co"># prints: selected -&gt; [7, 42]</span></span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>state.selected_ids <span class="op">=</span> <span class="bu">frozenset</span>({<span class="dv">7</span>, <span class="dv">42</span>})   <span class="co"># equal value: no signal</span></span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>state.viewport <span class="op">=</span> (<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">2048.0</span>, <span class="fl">1536.0</span>)</span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>state.canvas_size <span class="op">=</span> (<span class="dv">1024</span>, <span class="dv">768</span>)</span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>state.scale                                <span class="co"># 0.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>state <span class="op">=</span> ViewerState()</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>state.events.selected_ids.<span class="ex">connect</span>(<span class="kw">lambda</span> ids: <span class="bu">print</span>(<span class="st">&quot;selected -&gt;&quot;</span>, <span class="bu">sorted</span>(ids)))</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>state.selected_ids <span class="op">=</span> <span class="bu">frozenset</span>({<span class="dv">7</span>, <span class="dv">42</span>})   <span class="co"># prints: selected -&gt; [7, 42]</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>state.selected_ids <span class="op">=</span> <span class="bu">frozenset</span>({<span class="dv">7</span>, <span class="dv">42</span>})   <span class="co"># equal value: no signal</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>state.viewport <span class="op">=</span> (<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">2048.0</span>, <span class="fl">1536.0</span>)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>state.canvas_size <span class="op">=</span> (<span class="dv">1024</span>, <span class="dv">768</span>)</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>state.scale                                <span class="co"># 0.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>All fields are immutable types. Change them by assigning a new value, not by mutating in place, so change detection works.</p>
 </section>
 <section id="tilegrid-which-level-which-tiles" class="level2" data-number="8.3">
 <h2 data-number="8.3" class="anchored" data-anchor-id="tilegrid-which-level-which-tiles"><span class="header-section-number">8.3</span> <code>TileGrid</code> — which level, which tiles</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileGrid, TileKey</span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>grid <span class="op">=</span> TileGrid.from_raster(ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>), tile_size<span class="op">=</span><span class="dv">512</span>)</span>
-<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>grid.grid_size(<span class="dv">0</span>), grid.grid_size(<span class="dv">2</span>)      <span class="co"># ((12, 8), (3, 2))  columns, rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileGrid, TileKey</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>grid <span class="op">=</span> TileGrid.from_raster(ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>), tile_size<span class="op">=</span><span class="dv">512</span>)</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>grid.grid_size(<span class="dv">0</span>), grid.grid_size(<span class="dv">2</span>)      <span class="co"># ((12, 8), (3, 2))  columns, rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>level_for_scale(scale, bias=0.0)</code> picks the coarsest level that is still at least screen resolution:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>[grid.level_for_scale(s) <span class="cf">for</span> s <span class="kw">in</span> (<span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>, <span class="fl">0.25</span>, <span class="fl">0.1</span>)]</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [0, 0, 1, 1, 2, 2]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>[grid.level_for_scale(s) <span class="cf">for</span> s <span class="kw">in</span> (<span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>, <span class="fl">0.25</span>, <span class="fl">0.1</span>)]</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [0, 0, 1, 1, 2, 2]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A positive <code>bias</code> accepts slightly coarser levels (less data, softer image).</p>
 <p><code>tiles_in_viewport(viewport, level, margin=0)</code> lists the tiles that cover a viewport, <strong>center first</strong>, so fetching in list order fills the middle of the screen first. <code>margin</code> adds rings of off-screen tiles for prefetching:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [TileKey(level=1, ix=0, iy=0), TileKey(level=1, ix=1, iy=0),</span></span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="co">#  TileKey(level=1, ix=0, iy=1), TileKey(level=1, ix=1, iy=1)]</span></span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>, margin<span class="op">=</span><span class="dv">1</span>))   <span class="co"># 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [TileKey(level=1, ix=0, iy=0), TileKey(level=1, ix=1, iy=0),</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co">#  TileKey(level=1, ix=0, iy=1), TileKey(level=1, ix=1, iy=1)]</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>, margin<span class="op">=</span><span class="dv">1</span>))   <span class="co"># 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Tile geometry, at the tile’s own level and in world (level-0) coordinates. Edge tiles are clipped:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> TileKey(level<span class="op">=</span><span class="dv">1</span>, ix<span class="op">=</span><span class="dv">5</span>, iy<span class="op">=</span><span class="dv">3</span>)</span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>grid.tile_bounds_px(k)       <span class="co"># (2560, 1536, 512, 512)</span></span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>grid.tile_bounds_level0(k)   <span class="co"># (5120.0, 3072.0, 1024.0, 1024.0)</span></span>
-<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>grid.downsample(<span class="dv">1</span>)           <span class="co"># 2.0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> TileKey(level<span class="op">=</span><span class="dv">1</span>, ix<span class="op">=</span><span class="dv">5</span>, iy<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>grid.tile_bounds_px(k)       <span class="co"># (2560, 1536, 512, 512)</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>grid.tile_bounds_level0(k)   <span class="co"># (5120.0, 3072.0, 1024.0, 1024.0)</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>grid.downsample(<span class="dv">1</span>)           <span class="co"># 2.0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tilecache-byte-budgeted-lru" class="level2" data-number="8.4">
 <h2 data-number="8.4" class="anchored" data-anchor-id="tilecache-byte-budgeted-lru"><span class="header-section-number">8.4</span> <code>TileCache</code> — byte-budgeted LRU</h2>
 <p>Thread-safe. Evicts least-recently-used tiles once <code>max_bytes</code> is exceeded, but never the tile just inserted.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileCache</span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>cache <span class="op">=</span> TileCache(max_bytes<span class="op">=</span><span class="dv">768</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>)</span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>cache.put(key, array)</span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>cache.get(key)            <span class="co"># array or None; refreshes recency</span></span>
-<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>key <span class="kw">in</span> cache, <span class="bu">len</span>(cache), cache.nbytes</span>
-<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>cache.clear()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileCache</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>cache <span class="op">=</span> TileCache(max_bytes<span class="op">=</span><span class="dv">768</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>cache.put(key, array)</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>cache.get(key)            <span class="co"># array or None; refreshes recency</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>key <span class="kw">in</span> cache, <span class="bu">len</span>(cache), cache.nbytes</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>cache.clear()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tilefetcher-background-reads" class="level2" data-number="8.5">
 <h2 data-number="8.5" class="anchored" data-anchor-id="tilefetcher-background-reads"><span class="header-section-number">8.5</span> <code>TileFetcher</code> — background reads</h2>
 <p>A deduplicating thread pool. <code>on_tile</code> runs <strong>on a worker thread</strong>. The caller must hand results back to its own (GUI) thread; <code>SlideCanvas</code> does it with a queue drained by a timer.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> threading</span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileFetcher</span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>raster <span class="op">=</span> ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>)</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>cache <span class="op">=</span> TileCache(max_bytes<span class="op">=</span><span class="dv">256</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>)</span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_tile(key):</span>
-<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>    x0, y0, w, h <span class="op">=</span> grid.tile_bounds_px(key)</span>
-<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raster.get_region_px(x0, y0, w, h, level<span class="op">=</span>key.level)</span>
-<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> on_tile(key, arr):           <span class="co"># worker thread</span></span>
-<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>    cache.put(key, arr)</span>
-<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>fetcher <span class="op">=</span> TileFetcher(read_tile, on_tile, max_workers<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a>keys <span class="op">=</span> grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a>fetcher.request(keys)    <span class="co"># 4 newly queued</span></span>
-<span id="cb57-17"><a href="#cb57-17" aria-hidden="true" tabindex="-1"></a>fetcher.request(keys)    <span class="co"># 0 — already queued or running</span></span>
-<span id="cb57-18"><a href="#cb57-18" aria-hidden="true" tabindex="-1"></a><span class="co"># on viewport change, drop queued reads that are no longer needed:</span></span>
-<span id="cb57-19"><a href="#cb57-19" aria-hidden="true" tabindex="-1"></a>fetcher.cancel_except(new_keys)</span>
-<span id="cb57-20"><a href="#cb57-20" aria-hidden="true" tabindex="-1"></a>fetcher.pending          <span class="co"># reads queued or running</span></span>
-<span id="cb57-21"><a href="#cb57-21" aria-hidden="true" tabindex="-1"></a>fetcher.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> threading</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> TileFetcher</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>raster <span class="op">=</span> ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>)</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>cache <span class="op">=</span> TileCache(max_bytes<span class="op">=</span><span class="dv">256</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>)</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_tile(key):</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    x0, y0, w, h <span class="op">=</span> grid.tile_bounds_px(key)</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raster.get_region_px(x0, y0, w, h, level<span class="op">=</span>key.level)</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> on_tile(key, arr):           <span class="co"># worker thread</span></span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>    cache.put(key, arr)</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>fetcher <span class="op">=</span> TileFetcher(read_tile, on_tile, max_workers<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>keys <span class="op">=</span> grid.tiles_in_viewport((<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2048</span>, <span class="dv">1536</span>), level<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>fetcher.request(keys)    <span class="co"># 4 newly queued</span></span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>fetcher.request(keys)    <span class="co"># 0 — already queued or running</span></span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a><span class="co"># on viewport change, drop queued reads that are no longer needed:</span></span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>fetcher.cancel_except(new_keys)</span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a>fetcher.pending          <span class="co"># reads queued or running</span></span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a>fetcher.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Read errors are logged and don’t stop the pool.</p>
 </section>
 <section id="slidecanvas-the-gigapixel-canvas" class="level2" data-number="8.6">
 <h2 data-number="8.6" class="anchored" data-anchor-id="slidecanvas-the-gigapixel-canvas"><span class="header-section-number">8.6</span> <code>SlideCanvas</code> — the gigapixel canvas</h2>
 <p><em>Needs vispy, a Qt backend and OpenGL.</em> Navigation methods (<code>get_view</code>/<code>set_view</code>, <code>go_to</code>, <code>navigate</code>, <code>overview_visible</code>) are documented in <a href="viewer.md"><code>viewer.md</code></a>, <em>Embedding <code>SlideCanvas</code></em>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>SlideCanvas(raster, state<span class="op">=</span><span class="va">None</span>, tile_size<span class="op">=</span><span class="dv">512</span>, cache_bytes<span class="op">=</span><span class="dv">768</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>,</span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>            prefetch_margin<span class="op">=</span><span class="dv">1</span>, max_workers<span class="op">=</span><span class="dv">2</span>, <span class="op">**</span>vispy_canvas_kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>SlideCanvas(raster, state<span class="op">=</span><span class="va">None</span>, tile_size<span class="op">=</span><span class="dv">512</span>, cache_bytes<span class="op">=</span><span class="dv">768</span> <span class="op">*</span> <span class="dv">2</span><span class="op">**</span><span class="dv">20</span>,</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>            prefetch_margin<span class="op">=</span><span class="dv">1</span>, max_workers<span class="op">=</span><span class="dv">2</span>, <span class="op">**</span>vispy_canvas_kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>World coordinates are level-0 pixels, y down — the same as the annotation store, so overlays need no transform.</li>
 <li>The coarsest level is always drawn as a static backdrop, so the view is never blank.</li>
@@ -3282,36 +3121,36 @@ object_id
 <section id="embedding-in-your-own-window" class="level3" data-number="8.6.1">
 <h3 data-number="8.6.1" class="anchored" data-anchor-id="embedding-in-your-own-window"><span class="header-section-number">8.6.1</span> Embedding in your own window</h3>
 <p>How a larger app shares one <code>ViewerState</code> between the canvas and other panels:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vispy <span class="im">import</span> app <span class="im">as</span> vispy_app</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>vispy_app.use_app(<span class="st">&quot;pyside6&quot;</span>)            <span class="co"># before creating any canvas</span></span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> PySide6 <span class="im">import</span> QtWidgets</span>
-<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
-<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState</span>
-<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer.canvas <span class="im">import</span> SlideCanvas</span>
-<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>qapp <span class="op">=</span> QtWidgets.QApplication(sys.argv)</span>
-<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a>state <span class="op">=</span> ViewerState()</span>
-<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a>canvas <span class="op">=</span> SlideCanvas(ZarrRaster(<span class="st">&quot;slide.zarr&quot;</span>), state<span class="op">=</span>state)</span>
-<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a><span class="co"># a minimal &quot;panel&quot;: a status label following the navigation state</span></span>
-<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>label <span class="op">=</span> QtWidgets.QLabel()</span>
-<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_nav(<span class="op">*</span>_):</span>
-<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>    x0, y0, w, h <span class="op">=</span> state.viewport</span>
-<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a>    label.setText(<span class="ss">f&quot;level </span><span class="sc">{</span>state<span class="sc">.</span>current_level<span class="sc">}</span><span class="ss">  |  &quot;</span></span>
-<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a>                  <span class="ss">f&quot;x=</span><span class="sc">{</span>x0<span class="sc">:.0f}</span><span class="ss"> y=</span><span class="sc">{</span>y0<span class="sc">:.0f}</span><span class="ss">  </span><span class="sc">{</span>w<span class="sc">:.0f}</span><span class="ss">×</span><span class="sc">{</span>h<span class="sc">:.0f}</span><span class="ss"> px&quot;</span>)</span>
-<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>state.events.viewport.<span class="ex">connect</span>(show_nav)</span>
-<span id="cb59-22"><a href="#cb59-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb59-23"><a href="#cb59-23" aria-hidden="true" tabindex="-1"></a>win <span class="op">=</span> QtWidgets.QMainWindow()</span>
-<span id="cb59-24"><a href="#cb59-24" aria-hidden="true" tabindex="-1"></a>win.setCentralWidget(canvas.native)</span>
-<span id="cb59-25"><a href="#cb59-25" aria-hidden="true" tabindex="-1"></a>dock <span class="op">=</span> QtWidgets.QDockWidget(<span class="st">&quot;Navigation&quot;</span>)</span>
-<span id="cb59-26"><a href="#cb59-26" aria-hidden="true" tabindex="-1"></a>dock.setWidget(label)</span>
-<span id="cb59-27"><a href="#cb59-27" aria-hidden="true" tabindex="-1"></a>win.addDockWidget(QtWidgets.Qt.DockWidgetArea.BottomDockWidgetArea, dock)</span>
-<span id="cb59-28"><a href="#cb59-28" aria-hidden="true" tabindex="-1"></a>win.resize(<span class="dv">1280</span>, <span class="dv">900</span>)</span>
-<span id="cb59-29"><a href="#cb59-29" aria-hidden="true" tabindex="-1"></a>win.show()</span>
-<span id="cb59-30"><a href="#cb59-30" aria-hidden="true" tabindex="-1"></a>qapp.<span class="bu">exec</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> vispy <span class="im">import</span> app <span class="im">as</span> vispy_app</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>vispy_app.use_app(<span class="st">&quot;pyside6&quot;</span>)            <span class="co"># before creating any canvas</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> PySide6 <span class="im">import</span> QtWidgets</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.core <span class="im">import</span> ZarrRaster</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer <span class="im">import</span> ViewerState</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> compass.viewer.canvas <span class="im">import</span> SlideCanvas</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>qapp <span class="op">=</span> QtWidgets.QApplication(sys.argv)</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>state <span class="op">=</span> ViewerState()</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>canvas <span class="op">=</span> SlideCanvas(ZarrRaster(<span class="st">&quot;slide.zarr&quot;</span>), state<span class="op">=</span>state)</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a><span class="co"># a minimal &quot;panel&quot;: a status label following the navigation state</span></span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>label <span class="op">=</span> QtWidgets.QLabel()</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_nav(<span class="op">*</span>_):</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>    x0, y0, w, h <span class="op">=</span> state.viewport</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>    label.setText(<span class="ss">f&quot;level </span><span class="sc">{</span>state<span class="sc">.</span>current_level<span class="sc">}</span><span class="ss">  |  &quot;</span></span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a>                  <span class="ss">f&quot;x=</span><span class="sc">{</span>x0<span class="sc">:.0f}</span><span class="ss"> y=</span><span class="sc">{</span>y0<span class="sc">:.0f}</span><span class="ss">  </span><span class="sc">{</span>w<span class="sc">:.0f}</span><span class="ss">×</span><span class="sc">{</span>h<span class="sc">:.0f}</span><span class="ss"> px&quot;</span>)</span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a>state.events.viewport.<span class="ex">connect</span>(show_nav)</span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true" tabindex="-1"></a>win <span class="op">=</span> QtWidgets.QMainWindow()</span>
+<span id="cb47-24"><a href="#cb47-24" aria-hidden="true" tabindex="-1"></a>win.setCentralWidget(canvas.native)</span>
+<span id="cb47-25"><a href="#cb47-25" aria-hidden="true" tabindex="-1"></a>dock <span class="op">=</span> QtWidgets.QDockWidget(<span class="st">&quot;Navigation&quot;</span>)</span>
+<span id="cb47-26"><a href="#cb47-26" aria-hidden="true" tabindex="-1"></a>dock.setWidget(label)</span>
+<span id="cb47-27"><a href="#cb47-27" aria-hidden="true" tabindex="-1"></a>win.addDockWidget(QtWidgets.Qt.DockWidgetArea.BottomDockWidgetArea, dock)</span>
+<span id="cb47-28"><a href="#cb47-28" aria-hidden="true" tabindex="-1"></a>win.resize(<span class="dv">1280</span>, <span class="dv">900</span>)</span>
+<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a>win.show()</span>
+<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a>qapp.<span class="bu">exec</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 </section>
@@ -3320,51 +3159,51 @@ object_id
 <section id="choosing-live-vectors-vs.-a-density-raster" class="level2" data-number="9.1">
 <h2 data-number="9.1" class="anchored" data-anchor-id="choosing-live-vectors-vs.-a-density-raster"><span class="header-section-number">9.1</span> Choosing live vectors vs. a density raster</h2>
 <p>Before fetching geometry for a viewport, count it with the R-tree. Live vector rendering is only for small counts; above a threshold, rasterize (e.g. bounding-box centers with <code>datashader.Canvas</code>):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>LIVE_MAX <span class="op">=</span> <span class="dv">50_000</span></span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>x0, y0, w, h <span class="op">=</span> state.viewport</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>roi <span class="op">=</span> (x0, y0, x0 <span class="op">+</span> w, y0 <span class="op">+</span> h)</span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> store.count_objects_in_roi(cells, roi) <span class="op">&lt;=</span> LIVE_MAX:</span>
-<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>    gdf <span class="op">=</span> store.get_objects_in_roi(cells, roi, group_ids<span class="op">=</span><span class="bu">list</span>(state.visible_groups))</span>
-<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>    ...  <span class="co"># draw as vispy markers/polygons</span></span>
-<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
-<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>    bb <span class="op">=</span> store.get_bboxes(layer_id<span class="op">=</span>cells)</span>
-<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>    ...  <span class="co"># rasterize (min_x+max_x)/2, (min_y+max_y)/2 with datashader</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>LIVE_MAX <span class="op">=</span> <span class="dv">50_000</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>x0, y0, w, h <span class="op">=</span> state.viewport</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>roi <span class="op">=</span> (x0, y0, x0 <span class="op">+</span> w, y0 <span class="op">+</span> h)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> store.count_objects_in_roi(cells, roi) <span class="op">&lt;=</span> LIVE_MAX:</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    gdf <span class="op">=</span> store.get_objects_in_roi(cells, roi, group_ids<span class="op">=</span><span class="bu">list</span>(state.visible_groups))</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    ...  <span class="co"># draw as vispy markers/polygons</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    bb <span class="op">=</span> store.get_bboxes(layer_id<span class="op">=</span>cells)</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    ...  <span class="co"># rasterize (min_x+max_x)/2, (min_y+max_y)/2 with datashader</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="coloring-cells-by-a-marker" class="level2" data-number="9.2">
 <h2 data-number="9.2" class="anchored" data-anchor-id="coloring-cells-by-a-marker"><span class="header-section-number">9.2</span> Coloring cells by a marker</h2>
 <p>Join the geometry and the attributes on <code>object_id</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> store.get_objects_in_roi(cells, (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2000</span>, <span class="dv">2000</span>))</span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>expr <span class="op">=</span> store.get_scalar_data(gdf.index.to_numpy(), attributes<span class="op">=</span>[<span class="st">&quot;CD3&quot;</span>])</span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>cd3 <span class="op">=</span> (expr.to_pandas().set_index(<span class="st">&quot;object_id&quot;</span>)[<span class="st">&quot;CD3&quot;</span>]</span>
-<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>           .reindex(gdf.index).fillna(<span class="fl">0.0</span>))</span>
-<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">&quot;CD3&quot;</span>] <span class="op">=</span> cd3            <span class="co"># ready for a colormap</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> store.get_objects_in_roi(cells, (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2000</span>, <span class="dv">2000</span>))</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>expr <span class="op">=</span> store.get_scalar_data(gdf.index.to_numpy(), attributes<span class="op">=</span>[<span class="st">&quot;CD3&quot;</span>])</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>cd3 <span class="op">=</span> (expr.to_pandas().set_index(<span class="st">&quot;object_id&quot;</span>)[<span class="st">&quot;CD3&quot;</span>]</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>           .reindex(gdf.index).fillna(<span class="fl">0.0</span>))</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">&quot;CD3&quot;</span>] <span class="op">=</span> cd3            <span class="co"># ready for a colormap</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="cutting-out-an-annotated-region-at-a-given-resolution" class="level2" data-number="9.3">
 <h2 data-number="9.3" class="anchored" data-anchor-id="cutting-out-an-annotated-region-at-a-given-resolution"><span class="header-section-number">9.3</span> Cutting out an annotated region at a given resolution</h2>
 <p>Polygons are stored in level-0 pixels. Scale them to the target level before reading:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shapely.affinity <span class="im">as</span> sha</span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>raster <span class="op">=</span> ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>)</span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>level <span class="op">=</span> raster.get_level_for_mpp(<span class="fl">1.0</span>)                    <span class="co"># 2</span></span>
-<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> raster.between_level_scaling_factor(<span class="dv">0</span>, level)        <span class="co"># 0.25</span></span>
-<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>poly0 <span class="op">=</span> store.get_objects([<span class="dv">1001</span>]).geometry.iloc[<span class="dv">0</span>]</span>
-<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>poly <span class="op">=</span> sha.scale(poly0, xfact<span class="op">=</span>s, yfact<span class="op">=</span>s, origin<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span>
-<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> raster.get_polygonal_region_px(poly, level<span class="op">=</span>level)</span>
-<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>img.shape    <span class="co"># (375, 500, 3)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shapely.affinity <span class="im">as</span> sha</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>raster <span class="op">=</span> ZarrRaster(<span class="st">&quot;demo.zarr&quot;</span>)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>level <span class="op">=</span> raster.get_level_for_mpp(<span class="fl">1.0</span>)                    <span class="co"># 2</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> raster.between_level_scaling_factor(<span class="dv">0</span>, level)        <span class="co"># 0.25</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>poly0 <span class="op">=</span> store.get_objects([<span class="dv">1001</span>]).geometry.iloc[<span class="dv">0</span>]</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>poly <span class="op">=</span> sha.scale(poly0, xfact<span class="op">=</span>s, yfact<span class="op">=</span>s, origin<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> raster.get_polygonal_region_px(poly, level<span class="op">=</span>level)</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>img.shape    <span class="co"># (375, 500, 3)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="pixels-microns" class="level2" data-number="9.4">
 <h2 data-number="9.4" class="anchored" data-anchor-id="pixels-microns"><span class="header-section-number">9.4</span> Pixels ↔︎ microns</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>mpp <span class="op">=</span> raster.get_mpp_for_level(level)</span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>area_um2 <span class="op">=</span> poly.area <span class="op">*</span> mpp<span class="op">**</span><span class="dv">2</span>              <span class="co"># polygon area in µm² at that level</span></span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>dist_px0 <span class="op">=</span> <span class="dv">100</span> <span class="op">/</span> raster.native_resolution  <span class="co"># 100 µm in level-0 pixels (400.0)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>mpp <span class="op">=</span> raster.get_mpp_for_level(level)</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>area_um2 <span class="op">=</span> poly.area <span class="op">*</span> mpp<span class="op">**</span><span class="dv">2</span>              <span class="co"># polygon area in µm² at that level</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>dist_px0 <span class="op">=</span> <span class="dv">100</span> <span class="op">/</span> raster.native_resolution  <span class="co"># 100 µm in level-0 pixels (400.0)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="known-limitations" class="level1" data-number="10">
 <h1 data-number="10"><span class="header-section-number">10</span> Known limitations</h1>
 <ul>
-<li><strong>No annotation writer outside <code>legacy</code></strong> yet; <code>AnnotationStore</code> is read-only (see the SQL example above).</li>
+<li><strong>Annotation writes</strong> are bounded by SQLite’s R-tree upkeep: adding or transforming a million objects takes tens of seconds (<a href="annotations.md"><code>annotations.md</code></a>, <em>Performance</em>).</li>
 <li><strong>Viewer</strong>: no annotation overlays, selection or analysis panels yet (build steps 4–5, architecture §7). The canvas isn’t covered by automated tests.</li>
 <li><strong><code>processing</code></strong> is empty.</li>
 <li><strong><code>raster2tiff</code></strong> loads the exported level fully into RAM and assumes RGB.</li>
