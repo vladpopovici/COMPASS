@@ -19,7 +19,8 @@ Typical use, e.g. to find the region worth keeping on a slide::
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
-__all__ = ["detect_foreground", "foreground_bbox", "METHODS"]
+__all__ = ["detect_foreground", "foreground_bbox", "mask_to_polygons", "tissue_regions",
+           "METHODS"]
 
 from collections.abc import Callable
 
@@ -29,6 +30,8 @@ import skimage.morphology as skm
 from scipy import ndimage, signal
 from scipy.optimize import fmin_slsqp
 from scipy.stats import norm
+from shapely import affinity
+from shapely.geometry import Polygon, box
 from skimage import color
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.neighbors import KernelDensity
@@ -142,7 +145,7 @@ def he_fast_foreground(img: np.ndarray, g_th: int = 220, ker_size: int = 33,
 
 
 def he_simple_foreground(img: np.ndarray, g_th: float | None = None,
-                         min_area: int = 150) -> DetectorResult:
+                         min_area: int = 150, fill_holes: bool = True) -> DetectorResult:
     """Foreground detection in H&E slides: G-plane threshold (estimated by
     2-means clustering unless given) plus a few hand-picked stain rules — a
     tissue pixel needs some H or E signal (above their 5th percentile) and
@@ -152,6 +155,8 @@ def he_simple_foreground(img: np.ndarray, g_th: float | None = None,
         img: H x W x 3 RGB image.
         g_th: G-plane threshold; ``None`` or 0 estimates it from the image.
         min_area: smallest object (pixels) to keep.
+        fill_holes: fill all holes of the final mask (default); pass False to
+            keep them, e.g. when the caller applies its own hole policy.
     """
     _check_rgb(img)
     if not g_th:
@@ -165,7 +170,8 @@ def he_simple_foreground(img: np.ndarray, g_th: float | None = None,
     mask &= (h > np.percentile(h, 5)) | (e > np.percentile(e, 5))
     mask &= b < np.percentile(b, 50)
 
-    mask = ndimage.binary_fill_holes(mask)
+    if fill_holes:
+        mask = ndimage.binary_fill_holes(mask)
     return mask, g_th
 
 
@@ -350,3 +356,104 @@ METHODS: dict[str, Callable[..., DetectorResult]] = {
     "fesi": fesi_foreground,
     "htk": htk_foreground,
 }
+
+
+# ----------------------------------------------------------------------
+# Tissue regions as polygons
+# ----------------------------------------------------------------------
+
+def mask_to_polygons(mask: np.ndarray, sx: float = 1.0, sy: float = 1.0, *,
+                     min_area: float = 0.0, hole_area: float = 0.0,
+                     tolerance: float = 0.0) -> list[Polygon]:
+    """Polygons of the connected components of a boolean mask.
+
+    Contours are traced with OpenCV, widened by half a pixel and shifted by
+    (0.5, 0.5), so that a polygon follows the pixel *edges* (pixel ``i`` spans
+    ``[i, i + 1]``). The polygons are scaled by ``(sx, sy)``; ``min_area``,
+    ``hole_area`` (square units) and ``tolerance`` (Douglas-Peucker
+    simplification) are all in these scaled coordinates. Holes smaller than
+    ``hole_area`` are filled, larger ones kept; components smaller than
+    ``min_area`` are dropped.
+
+    Returns:
+        polygons sorted by decreasing area, in scaled coordinates.
+    """
+    m = np.ascontiguousarray(mask.astype(np.uint8))
+    contours, hier = cv2.findContours(m, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    if hier is None:
+        return []
+    hier = hier[0]
+    xy = lambda c: c[:, 0, :].astype(float)
+    out: list[Polygon] = []
+    for i, c in enumerate(contours):
+        if hier[i][3] != -1 or len(c) < 3:           # not an outer contour
+            continue
+        holes = []
+        j = hier[i][2]
+        while j != -1:
+            if len(contours[j]) >= 3:
+                h = Polygon(xy(contours[j]))
+                if h.area * sx * sy >= hole_area:
+                    holes.append(xy(contours[j]))
+            j = hier[j][0]
+        poly = Polygon(xy(c), holes)
+        if not poly.is_valid:
+            poly = poly.buffer(0)
+        poly = affinity.translate(poly.buffer(0.5, join_style="mitre"), 0.5, 0.5)
+        polys = [poly] if poly.geom_type == "Polygon" else list(getattr(poly, "geoms", []))
+        for q in polys:
+            q = affinity.scale(q, sx, sy, origin=(0, 0))
+            if q.is_empty or q.area < min_area:
+                continue
+            if tolerance > 0:
+                q = q.simplify(tolerance, preserve_topology=True)
+            if not q.is_empty and q.geom_type == "Polygon":
+                out.append(q)
+    return sorted(out, key=lambda q: -q.area)
+
+
+def tissue_regions(raster, *, method: str = "simple-he", work_mpp: float = 8.0,
+                   tolerance_um: float = 10.0, min_area_mm2: float = 0.25,
+                   hole_area_mm2: float = 0.1, **detector_kwargs) -> dict:
+    """Tissue pieces of an imported pyramid: an outline polygon and a
+    bounding box per piece, in level-0 pixel coordinates.
+
+    The tissue is detected on the pyramid level whose resolution is closest to
+    ``work_mpp`` (microns per pixel), see :func:`detect_foreground`
+    (``simple-he`` keeps holes here so that ``hole_area_mm2`` decides). Holes
+    below ``hole_area_mm2`` are filled, pieces below ``min_area_mm2`` dropped,
+    the outlines simplified with ``tolerance_um`` (Douglas-Peucker).
+
+    Returns:
+        ``{"pieces": [{"outline": Polygon, "bbox": Polygon, "area_um2": float}],
+        "info": {...}}``, pieces sorted by decreasing area; ``info`` has the
+        working level and resolution, the threshold and the parameters.
+    """
+    mpp0 = float(raster.get_mpp_for_level(0))
+    levels = range(raster.nlevels)
+    k = min(levels, key=lambda lv: abs(np.log(raster.get_mpp_for_level(lv) / work_mpp)))
+    mpp_k = float(raster.get_mpp_for_level(k))
+    w0, h0 = raster.shape(0).width, raster.shape(0).height
+    wk, hk = raster.shape(k).width, raster.shape(k).height
+    sx, sy = w0 / wk, h0 / hk
+
+    img = np.asarray(raster.get_plane(k))[..., :3]
+    kwargs = dict(detector_kwargs)
+    if method == "simple-he":
+        kwargs.setdefault("fill_holes", False)
+    mask, th = detect_foreground(img, method=method, **kwargs)
+
+    um2 = lambda mm2: mm2 * 1e6 / (mpp0 * mpp0)       # mm^2 -> level-0 px^2
+    polys = mask_to_polygons(mask, sx, sy, min_area=um2(min_area_mm2),
+                             hole_area=um2(hole_area_mm2),
+                             tolerance=tolerance_um / mpp0)
+    pieces = []
+    for p in polys:
+        x0, y0, x1, y1 = p.bounds
+        pieces.append({"outline": p, "bbox": box(x0, y0, x1, y1),
+                       "area_um2": float(p.area * mpp0 * mpp0)})
+    info = {"method": method, "threshold": None if th is None else float(th),
+            "work_level": int(k), "work_mpp": mpp_k, "mask_size": [int(wk), int(hk)],
+            "tolerance_um": tolerance_um, "min_area_mm2": min_area_mm2,
+            "hole_area_mm2": hole_area_mm2}
+    return {"pieces": pieces, "info": info}

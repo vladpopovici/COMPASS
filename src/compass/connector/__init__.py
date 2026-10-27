@@ -19,12 +19,16 @@ import WSI``), so importing ``compass.connector`` itself needs none of them.
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
+from .asap import AsapTarget, asap_to_store, read_asap_xml
 from .export import build_omexml, raster2tiff
 from .ingest import (TRANSFORM_TYPES, box_downsample, closest_level_for_mpp,
                      crop_scale_transform, import_record, ometiff2zarr,
                      plan_import, plan_levels, resolve_crop, wsi2zarr)
 
 __all__ = [
+    "AsapTarget",
+    "asap_to_store",
+    "read_asap_xml",
     "TRANSFORM_TYPES",
     "box_downsample",
     "closest_level_for_mpp",
