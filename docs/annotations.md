@@ -56,6 +56,7 @@ The legacy API (`Annotation`, `save_annotation`, `load_annotation`,
 | `annot.store` | `AnnotationStore` |
 | `annot.schema` | `SQLITE_DDL`, `SCHEMA_VERSION`, `ANNOT_TYPE_CODE`, `ANNOT_CODE_TYPE`, `init_db`, `geometry_type_names` |
 | `annot.compat` | the legacy `Annotation` class and module functions |
+| `connector.asap` | `read_asap_xml`, `asap_to_store`, `AsapTarget`: import of ASAP XML annotations |
 
 Everything is importable from `compass.core.annot`; the most used names
 (`AnnotationStore`, `Annotation`, the object classes, the schema constants)
@@ -516,6 +517,40 @@ object_id
 0           POINT       NaN   POINT (500 1000)
 1          CIRCLE      40.0  POINT (2500 2500)
 ```
+
+## Importing ASAP XML annotations
+
+ASAP XML files are read by `compass.connector`
+(standard-library XML only). `Dot` becomes `POINT`, `PointSet` becomes
+`POINTSET`, `Polygon` becomes `POLYGON`; any other type, a bad root element or missing coordinates raise
+`ValueError`. Coordinates are sorted by their `Order` attribute.
+
+ASAP knows only a flat list of named groups, whereas the store has
+layer → group → object. The mapping is explicit: `group_map` sends each ASAP
+group name to an `AsapTarget(layer, group, as_type=None)`; `as_type` forces
+the object type (e.g. `"POLYLINE"` for a `PointSet` that is really a line).
+
+```python
+from compass.core import ZarrRaster
+from compass.connector import asap_to_store, AsapTarget
+
+report = asap_to_store(
+    "AP1064-1.xml", "AP1064-1.morphotypes.ann.sqlite", ZarrRaster("AP1064-1.zarr"),
+    group_map={"Pattern CT": AsapTarget("morphology", "Pattern CT"),
+               "Invasive front": AsapTarget("landmarks", "Invasive front", "POLYLINE")},
+    on_unmapped="error",     # or "skip"
+    prune_empty=True,        # drop empty groups/layers, incl. the default base/no_group
+)
+report["per_group"], report["unmapped"], report["repaired"], report["out_of_bounds"]
+```
+
+With a `ZarrRaster`, the source → output affine of the import record (see
+the previous section) is applied to the store, and `image_shape` and `mpp`
+are set from the pyramid; without one, pass `matrix`, `image_shape` and `mpp`
+yourself, or none for coordinates already in level-0 pixels. Invalid
+polygons are repaired with `make_valid` and degenerate ones skipped; both are
+counted in the report, as are objects outside the image. Existing output is
+replaced unless `overwrite=False`.
 
 ## Circles under transforms
 

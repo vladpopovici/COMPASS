@@ -769,7 +769,7 @@ class Annotation(object):
             pyr_level: int = 0,
     ) -> None:
         """
-        Transform the annotation (just scale) ti match the target image (at
+        Transform the annotation (just scale) to match the target image (at
         the specified level). The scaling might not be exactly the same on
         both axes, the function uses the average scaling factor.
         Args:
@@ -844,5 +844,3 @@ class Annotation(object):
 
 
 ##-
-
-
