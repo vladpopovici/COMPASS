@@ -163,7 +163,7 @@ def _transform_frame(gdf: gpd.GeoDataFrame, A: np.ndarray, t: np.ndarray | None,
     if "circle_r" in out.columns:
         out["circle_r"] = radii
     if converted.any():
-        tp = out["type"].astype(object).to_numpy()
+        tp = out["type"].astype(object).to_numpy(copy=True)
         tp[converted] = "POLYGON"
         out["type"] = (pd.Categorical(tp, categories=gdf["type"].cat.categories)
                        if isinstance(gdf["type"].dtype, pd.CategoricalDtype) else tp)

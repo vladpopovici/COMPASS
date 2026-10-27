@@ -235,3 +235,24 @@ def test_wsi2zarr_level_smaller_than_chunk(fake_slide, tmp_path):
     m = ZarrRaster(dst)
     assert m.shape(2) == ImageShape(width=350, height=275)
     np.testing.assert_array_equal(m.get_plane(0), arr[16:16 + 1100, 8:8 + 1400])
+
+
+def test_wsi2zarr_odd_extents_match_plan(fake_slide, monkeypatch, tmp_path):
+    """pyvips rounds odd sizes to nearest while plan_levels() floors: the
+    stored arrays must still have exactly the planned (recorded) shapes."""
+    def resize_round(self, scale, gap=None):
+        f = round(1.0 / scale)
+        h, w = -(-self.arr.shape[0] // f), -(-self.arr.shape[1] // f)  # ceil, like .5 -> up
+        return FakeVipsImage(self.arr[::f, ::f][:h, :w])
+
+    monkeypatch.setattr(FakeVipsImage, "resize", resize_round)
+    slide_path, _ = fake_slide
+    dst = tmp_path / "odd.zarr"
+    rec = wsi2zarr(slide_path, dst, crop=(0, 0, 1403, 1103),
+                   min_size=64, chunk_size=64, shard_factor=2)
+    m = ZarrRaster(dst)
+    planned = rec["output"]["level_shapes"]
+    assert len(planned) == m.nlevels > 3
+    for k, (w, h) in enumerate(planned):
+        assert m.shape(k) == ImageShape(width=w, height=h), k
+    assert planned[1] == [701, 551] and planned[2] == [350, 275]

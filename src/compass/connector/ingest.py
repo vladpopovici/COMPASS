@@ -401,6 +401,12 @@ def wsi2zarr(
             logger.info("wsi2zarr: generating level %d...", level)
             im = pyvips.Image.new_from_file(str(tmp_path / f"level{level - 1}.v"))
             im_scaled = im.resize(1.0 / downscale_factor, gap=2.0)
+            # pyvips rounds odd sizes to nearest, plan_levels() floors: drop
+            # the extra trailing row/column so arrays match the import record
+            pw, ph = plan["levels"][level]["w"], plan["levels"][level]["h"]
+            if (im_scaled.width, im_scaled.height) != (pw, ph):
+                im_scaled = im_scaled.crop(0, 0, min(pw, im_scaled.width),
+                                           min(ph, im_scaled.height))
             im_scaled.write_to_file(str(tmp_path / f"level{level}.v"))
 
         logger.info("wsi2zarr: from temporary to destination")
