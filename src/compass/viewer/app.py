@@ -28,6 +28,7 @@ APP_KEYS: list[tuple[str, str]] = [
     ("q, Ctrl+Q", "quit"),
     ("F11", "toggle fullscreen"),
     ("i", "show/hide the info bar and overview thumbnail"),
+    ("a", "show/hide the annotations and their panel"),
     ("?, F1", "show this help"),
 ]
 
@@ -88,6 +89,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="decoded-tile RAM budget in MB (default: 768)")
     parser.add_argument("--workers", type=int, default=2,
                         help="tile reader threads (default: 2)")
+    parser.add_argument("--annot", type=Path, action="append", default=[], metavar="FILE",
+                        help="annotation store (.ann.sqlite) to draw over the slide; "
+                             "repeat for several")
+    parser.add_argument("--colors", type=Path, metavar="TOML",
+                        help="group colours: a [colors] table or [[group]] entries "
+                             "with name and color (a vocabulary file works)")
+    parser.add_argument("--annot-width", type=float, default=2.0, metavar="PX",
+                        help="annotation outline width in screen pixels (default: 2)")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="log tile traffic to stderr")
     args = parser.parse_args(argv)
@@ -106,6 +115,24 @@ def main(argv: list[str] | None = None) -> int:
 
     qapp = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv[:1])
 
+    overlay = None
+    if args.annot:
+        from .overlay import load_overlay, read_colors
+        missing = [str(p) for p in args.annot if not p.is_file()]
+        if missing:
+            parser.error(f"annotation store not found: {', '.join(missing)}")
+        try:
+            colors = read_colors(args.colors) if args.colors else None
+            overlay = load_overlay(args.annot, colors)
+        except (OSError, ValueError) as e:
+            parser.error(str(e))
+        for w in overlay.warnings:
+            print(f"warning: {w}", file=sys.stderr)
+        if not overlay.groups:
+            print("warning: the annotation stores hold no objects", file=sys.stderr)
+    elif args.colors:
+        parser.error("--colors needs at least one --annot")
+
     raster = ZarrRaster(args.slide)
     canvas = SlideCanvas(raster,
                          tile_size=args.tile_size,
@@ -115,6 +142,15 @@ def main(argv: list[str] | None = None) -> int:
     win = QtWidgets.QMainWindow()
     win.setWindowTitle(f"COMPASS — {args.slide.name}")
     win.setCentralWidget(canvas.native)
+
+    # annotation overlay and its panel
+    annot = panel = None
+    if overlay is not None and overlay.groups:
+        from .overlay_panel import AnnotationPanel
+        from .overlay_visuals import AnnotationOverlay
+        annot = AnnotationOverlay(canvas, overlay, line_width=args.annot_width)
+        panel = AnnotationPanel(overlay, canvas.state, win)
+        win.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, panel)
 
     # info bar
     info = QtWidgets.QLabel()
@@ -145,12 +181,20 @@ def main(argv: list[str] | None = None) -> int:
         canvas.overview_visible = show  # thumbnail follows the info bar
         refresh_info()
 
+    def toggle_annotations():
+        if annot is None:
+            return
+        show = not annot.visible
+        annot.visible = show
+        panel.setVisible(show)
+
     def show_help():
         QtWidgets.QMessageBox.information(win, "COMPASS — keys", help_html())
 
     add_action("q, Ctrl+Q", win.close)
     add_action("F11", toggle_fullscreen)
     add_action("i", toggle_info)
+    add_action("a", toggle_annotations)
     add_action("?, F1", show_help)
 
     win.resize(1280, 900)
@@ -159,6 +203,8 @@ def main(argv: list[str] | None = None) -> int:
     refresh_info()
 
     rc = qapp.exec()
+    if annot is not None:
+        annot.close()
     canvas.close()  # stop tile reads before the interpreter shuts down
     return rc
 

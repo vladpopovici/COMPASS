@@ -29,8 +29,9 @@ browser/JS) is in [`architecture.md`](architecture.md), §6–7.
 
 **Status.** Build steps 1–3 of architecture §7 are done: tile streaming
 with pyramid-level switching, plus keyboard/mouse navigation and an
-overview thumbnail. Annotation overlays (step 4) and analysis panels
-(step 5) are not built yet. See [Limitations](#limitations-and-next-steps).
+overview thumbnail. Step 4 exists in a first, read-only form: annotation
+overlays with a group panel (see [Annotations](#annotations)). Selection
+and analysis panels (step 5) are not built yet. See [Limitations](#limitations-and-next-steps).
 
 # Part I — Using the viewer {.unnumbered}
 
@@ -46,6 +47,9 @@ uv run python -m compass.viewer slide.zarr
 | `--tile-size N` | 512 | Tile edge in pixels. Keep it equal to the store's chunk size (512 for stores written by `wsi2zarr` / `ometiff2zarr`) so one tile maps to whole chunks |
 | `--cache-mb N` | 768 | RAM budget for decoded tiles |
 | `--workers N` | 2 | Background tile-reader threads |
+| `--annot FILE` | none | Annotation store (`.ann.sqlite`) drawn over the slide; repeat for several. See [Annotations](#annotations) |
+| `--colors TOML` | palette | Group colours for the overlay |
+| `--annot-width PX` | 2 | Outline width in screen pixels |
 | `-v` | off | Debug logging to stderr |
 
 The slide must be a Zarr pyramid written by
@@ -116,6 +120,7 @@ the application.
 | `q` or `Ctrl+Q` | Quit |
 | `F11` | Toggle fullscreen |
 | `i` | Show/hide the info bar and the overview thumbnail |
+| `a` | Show/hide the annotations and their panel (only with `--annot`) |
 | `?` or `F1` | Show the list of keys and mouse actions |
 | `Esc` | Nothing (reserved: will clear the selection once annotations exist) |
 
@@ -143,6 +148,45 @@ the application.
 - **Fit slide.**
 - **Copy position** — the point's coordinates, in level-0 pixels or in
   µm, to the clipboard (as `x, y`).
+
+# Annotations
+
+```bash
+uv run python -m compass.viewer slide.zarr \
+    --annot slide.morphotypes.ann.sqlite --annot slide.tissue.ann.sqlite \
+    --colors vocab.toml
+```
+
+Each store is opened read-only and every non-empty group is drawn in
+level-0 pixel coordinates: polygon outlines (holes included) and polylines
+as lines of constant screen width, points and point sets as round markers.
+Polygons are not filled, so the tissue stays visible underneath. The stores
+must be in the coordinate system of the pyramid (the importers in
+`compass.connector` write them that way).
+
+The **Annotations** panel on the right lists store → layer → group with a
+colour swatch and the object count; a check box shows or hides a group, and
+ticking a store or layer ticks all of its groups. `a` hides or shows the
+overlay and the panel together.
+
+**Colours.** A group name has one colour across all loaded stores. Without
+`--colors` they come from a colour-blind-safe palette in order of first
+appearance. `--colors` takes a TOML file with either a flat table
+
+```toml
+[colors]
+"Pattern CT" = "#0072B2"
+```
+
+or a list of groups, `[[group]]` with `name` and `color` (other keys are
+ignored, so a vocabulary file with colours can be passed as it is). Groups
+not listed get palette colours that avoid the listed ones.
+
+**Scale.** Groups are loaded whole into memory, which suits region and
+landmark annotations (hundreds to thousands of objects). A group with more
+than 200 000 objects is skipped with a warning on stderr; cell-level layers
+need the level-of-detail overlay described in
+[Limitations](#limitations-and-next-steps).
 
 # Zoom limits and history
 
@@ -203,12 +247,15 @@ src/compass/viewer/
   navigation.py   View, Navigator, ViewHistory, key map, thumbnail geometry
   canvas.py       SlideCanvas (vispy): tiles -> textures, input handling
   inset.py        OverviewInset (vispy): the thumbnail
+  overlay.py      annotation overlay data: stores -> segments/points per group, colours (headless)
+  overlay_visuals.py  AnnotationOverlay (vispy): one Line + one Markers per group
+  overlay_panel.py    AnnotationPanel (Qt dock): group tree with check boxes
   app.py          `python -m compass.viewer`: main window, app keys, info bar, help
 ```
 
-`state`, `tiling`, `fetch` and `navigation` import neither vispy nor Qt
+`state`, `tiling`, `fetch`, `navigation` and `overlay` import neither vispy nor Qt
 and are unit-tested headless (`src/compass/tests/test_viewer_*.py`).
-`canvas`, `inset` and `app` need vispy, PySide6 and OpenGL.
+`canvas`, `inset`, `overlay_visuals`, `overlay_panel` and `app` need vispy, PySide6 and OpenGL.
 
 Dependency direction follows the project rule: the viewer imports
 `compass.core` (and in future `compass.processing`), never
@@ -455,14 +502,19 @@ mind when touching `canvas.py`.
 
 # Limitations and next steps
 
-- **Annotation overlays** (architecture §7 step 4) are not built: live
-  vispy markers/polygons below a count threshold, datashader texture
-  above it. Overlays attach under `canvas.view.scene` in level-0
-  coordinates and must disable depth testing (pitfall 2).
+- **Annotation overlay** (architecture §7 step 4) is a first, read-only
+  version: whole groups drawn as vispy lines and markers, no clicking, no
+  editing. Still missing is the level-of-detail overlay (datashader
+  texture above a count threshold, viewport queries on the store's
+  R-tree) that dense cell layers will need. Overlays attach under
+  `canvas.view.scene` in level-0 coordinates and disable depth testing
+  (pitfall 2). Line widths above one pixel depend on the OpenGL driver
+  (`method="gl"`; vispy's antialiased `agg` method cannot draw independent
+  segments).
 - **Selection and panels** (step 5): single left-click and `Esc` are kept
   free for selecting objects / clearing the selection.
-  `selected_ids`, `hovered_id` and `visible_groups` exist in
-  `ViewerState` but are not drawn yet.
+  `visible_groups` drives the overlay panel; `selected_ids` and
+  `hovered_id` exist in `ViewerState` but are not used yet.
 - **Display of non-RGB data.** Tiles are uploaded as stored, with
   vispy's default `clim="auto"` (pitfall 6). 3-/4-channel slides display
   consistently over the full range of their data type: right for 8-bit
