@@ -26,6 +26,8 @@ from .state import ANNOT_WIDTH_MAX, ANNOT_WIDTH_MIN, ViewerState
 #: draw order of the overlay: above every tile (tiles use -level, the
 #: overview -1000), below the zoom-box band (1000)
 OVERLAY_ORDER = 500
+#: polygon fills sit above the (faded) image and below the outlines
+FILL_ORDER = 450
 
 
 class AnnotationOverlay:
@@ -51,6 +53,7 @@ class AnnotationOverlay:
         self._marker_ratio = marker_size / line_width
         self._colors = {g.uid: g.color for g in overlay.groups}
         self._width = float(line_width)
+        self._fills: dict[int, object] = {}  # polygon meshes, built on first use
         for g in overlay.groups:
             self._visuals[g.uid] = self._make_visuals(g, line_width, marker_size)
         self._state.visible_groups = frozenset(g.uid for g in overlay.groups)
@@ -60,6 +63,9 @@ class AnnotationOverlay:
                                       ANNOT_WIDTH_MAX)
         self._state.events.annot_width.connect(self._on_width)
         self._on_width()
+        self._state.events.fill_annotations.connect(self._on_fill)
+        self._state.events.fill_opacity.connect(self._on_fill)
+        self._on_fill()
         self._apply()
 
     # -- building -----------------------------------------------------
@@ -105,10 +111,44 @@ class AnnotationOverlay:
         for uid, vis in self._visuals.items():
             for v in vis:
                 v.visible = self._enabled and uid in shown
+        self._on_fill()
         self._canvas.update()
+
+    def _on_fill(self, *_) -> None:
+        """Polygon fills follow ``fill_annotations`` / ``fill_opacity`` and
+        the group visibility; meshes are triangulated on first use."""
+        st = self._state
+        shown = st.visible_groups
+        by_uid = self._overlay.by_uid()
+        for uid, g in by_uid.items():
+            on = st.fill_annotations and self._enabled and uid in shown and g.has_polygons
+            mesh = self._fills.get(uid)
+            if on and mesh is None:
+                tri = g.triangles()
+                if len(tri) == 0:
+                    continue
+                v3 = np.zeros((len(tri), 3), np.float32)
+                v3[:, :2] = tri
+                mesh = scene.visuals.Mesh(vertices=v3,
+                                          faces=np.arange(len(tri), dtype=np.uint32).reshape(-1, 3),
+                                          color=self._fill_color(uid),
+                                          parent=self._canvas.view.scene)
+                mesh.set_gl_state("translucent", depth_test=False, cull_face=False)
+                mesh.order = FILL_ORDER
+                self._fills[uid] = mesh
+            if mesh is not None:
+                mesh.color = self._fill_color(uid)
+                mesh.visible = bool(on)
+        self._canvas.update()
+
+    def _fill_color(self, uid: int):
+        r, g, b, _ = self._colors[uid]
+        return (r, g, b, float(self._state.fill_opacity))
 
     def set_group_color(self, uid: int, rgba) -> None:
         self._colors[uid] = rgba
+        if uid in self._fills:
+            self._fills[uid].color = self._fill_color(uid)
         for v in self._visuals.get(uid, []):
             if isinstance(v, scene.visuals.Line):
                 v.set_data(color=rgba)
@@ -137,6 +177,11 @@ class AnnotationOverlay:
     def close(self) -> None:
         self._state.events.visible_groups.disconnect(self._apply)
         self._state.events.annot_width.disconnect(self._on_width)
+        self._state.events.fill_annotations.disconnect(self._on_fill)
+        self._state.events.fill_opacity.disconnect(self._on_fill)
+        for m in self._fills.values():
+            m.parent = None
+        self._fills.clear()
         for vis in self._visuals.values():
             for v in vis:
                 v.parent = None

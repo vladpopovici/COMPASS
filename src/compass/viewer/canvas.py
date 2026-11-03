@@ -178,11 +178,11 @@ class SlideCanvas(scene.SceneCanvas):
         self._band.order = 1000
         self._band.visible = False
 
-        # image fade: a translucent slab in the background colour over the
+        # image fade: a translucent white slab over the
         # tiles (order 400: above every tile, below the annotations at 500)
         self._veil = scene.visuals.Rectangle(
             center=(w0 / 2, h0 / 2), width=w0, height=h0,
-            color=(0.125, 0.125, 0.125, 0.0), border_color=None,
+            color=(1.0, 1.0, 1.0, 0.0), border_color=None,
             parent=self._view.scene)
         self._veil.set_gl_state("translucent", depth_test=False, cull_face=False)
         self._veil.order = 400
@@ -287,14 +287,14 @@ class SlideCanvas(scene.SceneCanvas):
         return self.go_to(target, kind if kind in ("zoom", "pan") else repr(action))
 
     def _apply_fade(self, *_) -> None:
-        """Background colour and image veil follow ``light_background`` and
-        ``image_opacity`` (the faded image blends into the background)."""
-        light = self._state.light_background
-        rgb = (1.0, 1.0, 1.0) if light else (0.125, 0.125, 0.125)
-        self.bgcolor = rgb
+        """Background colour follows ``light_background``; the image fades
+        towards *white* (as on a slide on paper) whatever the background, so
+        fading never darkens the tissue."""
+        self.bgcolor = ((1.0, 1.0, 1.0) if self._state.light_background
+                        else (0.125, 0.125, 0.125))
         alpha = 1.0 - float(self._state.image_opacity)
         self._veil.visible = alpha > 0.0
-        self._veil.color = (*rgb, alpha)
+        self._veil.color = (1.0, 1.0, 1.0, alpha)
         self.update()
 
     def close(self) -> None:

@@ -124,6 +124,7 @@ the application.
 | `a` | Show/hide the annotations and their panel (only with `--annot`) |
 | `[` / `]` | Thinner / wider annotation outlines (0.5 px steps; point markers scale with the width) |
 | `,` / `.` | Fade / restore the image (opacity in 10 % steps) |
+| `p` | Fill polygon annotations (translucent, in their outline colour) |
 | `b` | Switch between dark and light background |
 | `v` | Show/hide the View panel |
 | `?` or `F1` | Show the list of keys and mouse actions |
@@ -200,19 +201,22 @@ help to read annotations against the tissue:
 
 - *Annotation width*: one global outline width for every annotation group.
   Point markers keep their size relative to it.
-- *Image opacity*: fades the slide into the background so that the
-  annotations stand out; 0 % leaves only the annotations. The overview
-  thumbnail is not faded.
-- *Light background*: white instead of dark grey. The faded image blends into
-  whichever background is active.
+- *Fill polygons* and *Fill opacity*: fills polygon annotations (holes are
+  respected) with the colour of their outline, at the chosen opacity (30 % by
+  default). Useful for regions, e.g. segmentations. Fills are triangulated the
+  first time they are switched on.
+- *Image opacity*: fades the slide towards white so that the annotations stand
+  out; 0 % leaves only the annotations. Fading never darkens the tissue,
+  whichever background is chosen. The overview thumbnail is not faded.
+- *Light background*: white instead of dark grey around the slide.
 
-*Reset* restores 2 px, 100 % and the dark background. The three values are
+*Reset* restores 2 px, no fill (30 % opacity), 100 % image opacity and the dark background. The settings are
 saved when the viewer exits (Qt `QSettings`, application `COMPASS/viewer`)
 and restored at the next start, for any slide; `--annot-width` wins over the
 saved width, and `--no-settings` neither reads nor writes them. Internally
-they are the `annot_width`, `image_opacity` and `light_background` fields of
-`ViewerState`; the fade is a translucent rectangle in the background colour
-drawn above the tiles and below the annotations.
+they are the `annot_width`, `fill_annotations`, `fill_opacity`, `image_opacity`
+and `light_background` fields of `ViewerState`; the fade is a translucent white
+rectangle drawn above the tiles, the fills a mesh below the outlines.
 
 # Zoom limits and history
 

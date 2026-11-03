@@ -130,6 +130,7 @@ class OverlayGroup:
             rows); polygon rings (exterior and holes) and polylines.
         points: float32 ``(m, 2)`` marker positions (points, point sets).
         color: RGBA floats.
+        geoms: the loaded geometries (kept for the lazy polygon fill).
     """
     uid: int
     source: str
@@ -139,6 +140,25 @@ class OverlayGroup:
     segments: np.ndarray
     points: np.ndarray
     color: Rgba = (1.0, 1.0, 1.0, 1.0)
+    geoms: np.ndarray | None = field(default=None, repr=False, compare=False)
+    _triangles: np.ndarray | None = field(default=None, init=False, repr=False,
+                                          compare=False)
+
+    def triangles(self) -> np.ndarray:
+        """Triangle-soup vertices ``(3k, 2)`` filling the group's polygons
+        (computed on first use, cached). Empty if there are no polygons."""
+        if self._triangles is None:
+            self._triangles = (polygon_triangles(self.geoms) if self.geoms is not None
+                               else np.empty((0, 2), np.float32))
+        return self._triangles
+
+    @property
+    def has_polygons(self) -> bool:
+        """True if any geometry of the group is (part of) a polygon."""
+        if self.geoms is None or len(self.geoms) == 0:
+            return False
+        g = self.geoms[~shapely.is_missing(self.geoms)]
+        return bool(g.size and (shapely.get_type_id(shapely.get_parts(g)) == 3).any())
 
     @property
     def label(self) -> str:
@@ -202,6 +222,39 @@ def geometry_arrays(geoms: Sequence) -> tuple[np.ndarray, np.ndarray]:
     return seg, points.reshape(-1, 2)
 
 
+def polygon_triangles(geoms: Sequence) -> np.ndarray:
+    """Triangulate the polygons among ``geoms`` (holes respected).
+
+    Returns float32 ``(3k, 2)``: the corners of ``k`` triangles, three
+    consecutive rows each. Non-polygon, missing and empty geometries are
+    ignored; multi-part polygons are split.
+    """
+    arr = np.asarray(list(geoms), dtype=object)
+    if arr.size == 0:
+        return np.empty((0, 2), np.float32)
+    arr = arr[~shapely.is_missing(arr)]
+    arr = arr[~shapely.is_empty(arr)] if arr.size else arr
+    parts = shapely.get_parts(arr) if arr.size else arr
+    polys = parts[shapely.get_type_id(parts) == 3] if parts.size else parts
+    if polys.size == 0:
+        return np.empty((0, 2), np.float32)
+    try:
+        tris = shapely.constrained_delaunay_triangles(polys)
+    except shapely.errors.GEOSException:  # an invalid polygon: go one by one
+        good = []
+        for pg in polys:
+            try:
+                good.append(shapely.constrained_delaunay_triangles(pg))
+            except shapely.errors.GEOSException:
+                log.warning("polygon not triangulated (invalid geometry)")
+        tris = np.asarray(good, dtype=object)
+    tri = shapely.get_parts(tris) if len(tris) else tris
+    if len(tri) == 0:
+        return np.empty((0, 2), np.float32)
+    xy = shapely.get_coordinates(tri).reshape(-1, 4, 2)[:, :3, :]  # drop closing vertex
+    return np.ascontiguousarray(xy.reshape(-1, 2), np.float32)
+
+
 def load_store_groups(path: str | Path, *, first_uid: int = 0,
                       max_objects: int = DEFAULT_MAX_OBJECTS
                       ) -> tuple[list[OverlayGroup], list[str]]:
@@ -236,7 +289,8 @@ def load_store_groups(path: str | Path, *, first_uid: int = 0,
             groups.append(OverlayGroup(uid=uid, source=source,
                                        layer=layers.get(int(row["layer_id"]), "?"),
                                        name=str(row["name"]), n_objects=int(ids.size),
-                                       segments=seg, points=pts))
+                                       segments=seg, points=pts,
+                                       geoms=gdf.geometry.to_numpy()))
             uid += 1
     return groups, warns
 

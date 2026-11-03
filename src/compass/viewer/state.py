@@ -60,6 +60,10 @@ class ViewerState(EventedModel):
     hovered_id: int | None = None
     #: annotation outline width, screen pixels (point markers scale with it)
     annot_width: float = Field(2.0, ge=ANNOT_WIDTH_MIN, le=ANNOT_WIDTH_MAX)
+    #: fill polygon annotations with their colour (translucent)
+    fill_annotations: bool = False
+    #: opacity of that fill (0..1)
+    fill_opacity: float = Field(0.3, ge=0.0, le=1.0)
     #: image opacity, 1 = opaque, 0 = fully faded into the background
     image_opacity: float = Field(1.0, ge=0.0, le=1.0)
     #: light (white) instead of dark background; the faded image blends to it

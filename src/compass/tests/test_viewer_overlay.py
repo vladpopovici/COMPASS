@@ -146,3 +146,41 @@ def test_store_is_not_modified(two_stores):
     before = a.read_bytes()
     load_overlay([a])
     assert a.read_bytes() == before
+
+
+def _tri_area(t):
+    t = t.reshape(-1, 3, 2).astype(float)
+    a, b, c = t[:, 0], t[:, 1], t[:, 2]
+    return 0.5 * np.abs((b[:, 0] - a[:, 0]) * (c[:, 1] - a[:, 1])
+                        - (c[:, 0] - a[:, 0]) * (b[:, 1] - a[:, 1])).sum()
+
+
+def test_polygon_triangles_area_holes_concave():
+    from compass.viewer.overlay import polygon_triangles
+    sq = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)],
+                 holes=[[(2, 2), (4, 2), (4, 4), (2, 4)]])
+    ell = Polygon([(20, 0), (30, 0), (30, 4), (24, 4), (24, 10), (20, 10)])
+    t = polygon_triangles([sq, ell, Point(1, 1), LineString([(0, 0), (1, 1)]), None])
+    assert t.shape[1] == 2 and t.dtype == np.float32 and len(t) % 3 == 0
+    assert _tri_area(t) == pytest.approx(sq.area + ell.area)
+
+
+def test_polygon_triangles_multipolygon_and_empty():
+    from compass.viewer.overlay import polygon_triangles
+    mp = shapely.MultiPolygon([Polygon([(0, 0), (1, 0), (1, 1)]),
+                               Polygon([(5, 5), (7, 5), (7, 7), (5, 7)])])
+    assert _tri_area(polygon_triangles([mp])) == pytest.approx(0.5 + 4.0)
+    assert polygon_triangles([]).shape == (0, 2)
+    assert polygon_triangles([Point(0, 0)]).shape == (0, 2)
+
+
+def test_group_has_polygons_and_lazy_triangles():
+    from compass.viewer.overlay import OverlayGroup
+    z = np.empty((0, 2), np.float32)
+    poly = Polygon([(0, 0), (4, 0), (4, 4)])
+    g = OverlayGroup(0, "s", "l", "n", 1, z, z, geoms=np.asarray([poly], dtype=object))
+    assert g.has_polygons
+    assert g.triangles() is g.triangles()  # cached
+    p = OverlayGroup(1, "s", "l", "n", 1, z, z, geoms=np.asarray([Point(0, 0)], dtype=object))
+    assert not p.has_polygons and len(p.triangles()) == 0
+    assert not OverlayGroup(2, "s", "l", "n", 0, z, z).has_polygons

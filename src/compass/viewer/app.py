@@ -31,6 +31,7 @@ APP_KEYS: list[tuple[str, str]] = [
     ("a", "show/hide the annotations and their panel"),
     ("[, ]", "thinner / wider annotation outlines"),
     (", .", "fade / restore the image (opacity -/+ 10 %)"),
+    ("p", "fill polygon annotations (translucent, in the outline colour)"),
     ("b", "light / dark background"),
     ("v", "show/hide the View panel (width, opacity, background)"),
     ("?, F1", "show this help"),
@@ -154,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     # display settings: command line > saved by the last session > defaults
     from .state import ANNOT_WIDTH_MAX, ANNOT_WIDTH_MIN
     from .view_panel import (ViewPanel, load_settings, nudge_opacity, nudge_width,
-                             save_settings, toggle_background)
+                             save_settings, toggle_background, toggle_fill)
     if not args.no_settings:
         load_settings(canvas.state)
     if args.annot_width is not None:
@@ -224,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     add_action("]", lambda: nudge_width(canvas.state, +1))
     add_action(",", lambda: nudge_opacity(canvas.state, -1))
     add_action(".", lambda: nudge_opacity(canvas.state, +1))
+    add_action("p", lambda: toggle_fill(canvas.state))
     add_action("b", lambda: toggle_background(canvas.state))
     add_action("v", toggle_view_panel)
     add_action("?, F1", show_help)

@@ -7,8 +7,8 @@
 
 __author__ = "Vlad Popovici <popovici@bioxlab.org>"
 
-"""Qt dock with the display settings: annotation width, image opacity and
-light/dark background. It only writes :class:`ViewerState`; the canvas and
+"""Qt dock with the display settings: annotation width, polygon fill, image
+opacity and light/dark background. It only writes :class:`ViewerState`; the canvas and
 the overlay follow. Also hosts the small persistence helpers (``QSettings``).
 """
 
@@ -19,7 +19,8 @@ from .state import (ANNOT_WIDTH_MAX, ANNOT_WIDTH_MIN, ANNOT_WIDTH_STEP,
 
 _WIDTH_SCALE = int(round(1 / ANNOT_WIDTH_STEP))  # slider ticks per pixel
 
-DEFAULTS = {"annot_width": 2.0, "image_opacity": 1.0, "light_background": False}
+DEFAULTS = {"annot_width": 2.0, "image_opacity": 1.0, "light_background": False,
+            "fill_annotations": False, "fill_opacity": 0.3}
 
 
 class ViewPanel(QtWidgets.QDockWidget):
@@ -42,23 +43,33 @@ class ViewPanel(QtWidgets.QDockWidget):
         self._opacity = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self._opacity.setRange(0, 100)
         self._opacity_lbl = QtWidgets.QLabel()
+        self._fill = QtWidgets.QCheckBox("Fill polygons")
+        self._fill_op = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self._fill_op.setRange(0, 100)
+        self._fill_lbl = QtWidgets.QLabel()
         self._light = QtWidgets.QCheckBox("Light background")
         self._reset = QtWidgets.QPushButton("Reset")
-        for w in (self._width, self._opacity, self._light, self._reset):
+        for w in (self._width, self._opacity, self._fill, self._fill_op, self._light,
+                  self._reset):
             w.setFocusPolicy(nofocus)
 
         form.addRow("Annotation width", self._row(self._width, self._width_lbl))
         form.addRow("Image opacity", self._row(self._opacity, self._opacity_lbl))
+        form.addRow(self._fill)
+        form.addRow("Fill opacity", self._row(self._fill_op, self._fill_lbl))
         form.addRow(self._light)
         form.addRow(self._reset)
         self.setWidget(box)
 
         self._width.valueChanged.connect(self._on_width)
         self._opacity.valueChanged.connect(self._on_opacity)
+        self._fill.toggled.connect(lambda on: self._write(fill_annotations=bool(on)))
+        self._fill_op.valueChanged.connect(lambda v: self._write(fill_opacity=v / 100.0))
         self._light.toggled.connect(self._on_light)
         self._reset.clicked.connect(self.reset)
         for sig in (state.events.annot_width, state.events.image_opacity,
-                    state.events.light_background):
+                    state.events.light_background, state.events.fill_annotations,
+                    state.events.fill_opacity):
             sig.connect(self._sync)
         self._sync()
 
@@ -110,10 +121,14 @@ class ViewPanel(QtWidgets.QDockWidget):
             self._width.setValue(int(round(st.annot_width * _WIDTH_SCALE)))
             self._opacity.setValue(int(round(st.image_opacity * 100)))
             self._light.setChecked(st.light_background)
+            self._fill.setChecked(st.fill_annotations)
+            self._fill_op.setValue(int(round(st.fill_opacity * 100)))
+            self._fill_op.setEnabled(st.fill_annotations)
         finally:
             self._busy = False
         self._width_lbl.setText(f"{st.annot_width:g} px")
         self._opacity_lbl.setText(f"{st.image_opacity * 100:.0f} %")
+        self._fill_lbl.setText(f"{st.fill_opacity * 100:.0f} %")
 
 
 # -- key actions (also used by the tests) ------------------------------------
@@ -134,6 +149,10 @@ def toggle_background(state: ViewerState) -> None:
     state.light_background = not state.light_background
 
 
+def toggle_fill(state: ViewerState) -> None:
+    state.fill_annotations = not state.fill_annotations
+
+
 # -- persistence -------------------------------------------------------------
 
 def load_settings(state: ViewerState, settings=None) -> dict:
@@ -144,7 +163,8 @@ def load_settings(state: ViewerState, settings=None) -> dict:
     s = settings if settings is not None else QtCore.QSettings("COMPASS", "viewer")
     out = {}
     for key, kind in (("annot_width", float), ("image_opacity", float),
-                      ("light_background", bool)):
+                      ("light_background", bool), ("fill_annotations", bool),
+                      ("fill_opacity", float)):
         v = s.value(f"view/{key}")
         if v is None:
             continue
