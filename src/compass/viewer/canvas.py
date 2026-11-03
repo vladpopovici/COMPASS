@@ -178,6 +178,19 @@ class SlideCanvas(scene.SceneCanvas):
         self._band.order = 1000
         self._band.visible = False
 
+        # image fade: a translucent slab in the background colour over the
+        # tiles (order 400: above every tile, below the annotations at 500)
+        self._veil = scene.visuals.Rectangle(
+            center=(w0 / 2, h0 / 2), width=w0, height=h0,
+            color=(0.125, 0.125, 0.125, 0.0), border_color=None,
+            parent=self._view.scene)
+        self._veil.set_gl_state("translucent", depth_test=False, cull_face=False)
+        self._veil.order = 400
+        self._veil.visible = False
+        self._state.events.image_opacity.connect(self._apply_fade)
+        self._state.events.light_background.connect(self._apply_fade)
+        self._apply_fade()
+
         self._inset = OverviewInset(self, self._overview_plane,
                                     self._grid.downsample(top), w0, h0)
 
@@ -272,6 +285,17 @@ class SlideCanvas(scene.SceneCanvas):
             raise ValueError(f"unknown navigation action {action!r}")
         # repeated zooms/pans form one history step; jumps are separate
         return self.go_to(target, kind if kind in ("zoom", "pan") else repr(action))
+
+    def _apply_fade(self, *_) -> None:
+        """Background colour and image veil follow ``light_background`` and
+        ``image_opacity`` (the faded image blends into the background)."""
+        light = self._state.light_background
+        rgb = (1.0, 1.0, 1.0) if light else (0.125, 0.125, 0.125)
+        self.bgcolor = rgb
+        alpha = 1.0 - float(self._state.image_opacity)
+        self._veil.visible = alpha > 0.0
+        self._veil.color = (*rgb, alpha)
+        self.update()
 
     def close(self) -> None:
         self._drain_timer.stop()

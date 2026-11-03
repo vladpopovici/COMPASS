@@ -29,6 +29,10 @@ APP_KEYS: list[tuple[str, str]] = [
     ("F11", "toggle fullscreen"),
     ("i", "show/hide the info bar and overview thumbnail"),
     ("a", "show/hide the annotations and their panel"),
+    ("[, ]", "thinner / wider annotation outlines"),
+    (", .", "fade / restore the image (opacity -/+ 10 %)"),
+    ("b", "light / dark background"),
+    ("v", "show/hide the View panel (width, opacity, background)"),
     ("?, F1", "show this help"),
 ]
 
@@ -95,8 +99,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--colors", type=Path, metavar="TOML",
                         help="group colours: a [colors] table or [[group]] entries "
                              "with name and color (a vocabulary file works)")
-    parser.add_argument("--annot-width", type=float, default=2.0, metavar="PX",
-                        help="annotation outline width in screen pixels (default: 2)")
+    parser.add_argument("--annot-width", type=float, default=None, metavar="PX",
+                        help="annotation outline width in screen pixels "
+                             "(default: the saved setting, else 2)")
+    parser.add_argument("--no-settings", action="store_true",
+                        help="ignore and do not save the display settings "
+                             "(annotation width, image opacity, background)")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="log tile traffic to stderr")
     args = parser.parse_args(argv)
@@ -143,12 +151,26 @@ def main(argv: list[str] | None = None) -> int:
     win.setWindowTitle(f"COMPASS — {args.slide.name}")
     win.setCentralWidget(canvas.native)
 
+    # display settings: command line > saved by the last session > defaults
+    from .state import ANNOT_WIDTH_MAX, ANNOT_WIDTH_MIN
+    from .view_panel import (ViewPanel, load_settings, nudge_opacity, nudge_width,
+                             save_settings, toggle_background)
+    if not args.no_settings:
+        load_settings(canvas.state)
+    if args.annot_width is not None:
+        if not ANNOT_WIDTH_MIN <= args.annot_width <= ANNOT_WIDTH_MAX:
+            parser.error(f"--annot-width must be in [{ANNOT_WIDTH_MIN:g}, "
+                         f"{ANNOT_WIDTH_MAX:g}]")
+        canvas.state.annot_width = args.annot_width
+    view_panel = ViewPanel(canvas.state, win)
+    win.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, view_panel)
+
     # annotation overlay and its panel
     annot = panel = None
     if overlay is not None and overlay.groups:
         from .overlay_panel import AnnotationPanel
         from .overlay_visuals import AnnotationOverlay
-        annot = AnnotationOverlay(canvas, overlay, line_width=args.annot_width)
+        annot = AnnotationOverlay(canvas, overlay, line_width=canvas.state.annot_width)
         panel = AnnotationPanel(overlay, canvas.state, win)
         win.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, panel)
 
@@ -188,6 +210,9 @@ def main(argv: list[str] | None = None) -> int:
         annot.visible = show
         panel.setVisible(show)
 
+    def toggle_view_panel():
+        view_panel.setVisible(not view_panel.isVisible())
+
     def show_help():
         QtWidgets.QMessageBox.information(win, "COMPASS — keys", help_html())
 
@@ -195,6 +220,12 @@ def main(argv: list[str] | None = None) -> int:
     add_action("F11", toggle_fullscreen)
     add_action("i", toggle_info)
     add_action("a", toggle_annotations)
+    add_action("[", lambda: nudge_width(canvas.state, -1))
+    add_action("]", lambda: nudge_width(canvas.state, +1))
+    add_action(",", lambda: nudge_opacity(canvas.state, -1))
+    add_action(".", lambda: nudge_opacity(canvas.state, +1))
+    add_action("b", lambda: toggle_background(canvas.state))
+    add_action("v", toggle_view_panel)
     add_action("?, F1", show_help)
 
     win.resize(1280, 900)
@@ -203,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
     refresh_info()
 
     rc = qapp.exec()
+    if not args.no_settings:
+        save_settings(canvas.state)
     if annot is not None:
         annot.close()
     canvas.close()  # stop tile reads before the interpreter shuts down

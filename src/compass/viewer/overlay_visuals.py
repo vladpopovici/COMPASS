@@ -21,7 +21,7 @@ import numpy as np
 from vispy import scene
 
 from .overlay import Overlay, OverlayGroup
-from .state import ViewerState
+from .state import ANNOT_WIDTH_MAX, ANNOT_WIDTH_MIN, ViewerState
 
 #: draw order of the overlay: above every tile (tiles use -level, the
 #: overview -1000), below the zoom-box band (1000)
@@ -47,10 +47,19 @@ class AnnotationOverlay:
         self._state = state if state is not None else canvas.state
         self._visuals: dict[int, list] = {}
         self._enabled = True
+        # markers keep their size ratio to the line width when it changes
+        self._marker_ratio = marker_size / line_width
+        self._colors = {g.uid: g.color for g in overlay.groups}
+        self._width = float(line_width)
         for g in overlay.groups:
             self._visuals[g.uid] = self._make_visuals(g, line_width, marker_size)
         self._state.visible_groups = frozenset(g.uid for g in overlay.groups)
         self._state.events.visible_groups.connect(self._apply)
+        # the constructor argument is the initial value of the shared setting
+        self._state.annot_width = min(max(float(line_width), ANNOT_WIDTH_MIN),
+                                      ANNOT_WIDTH_MAX)
+        self._state.events.annot_width.connect(self._on_width)
+        self._on_width()
         self._apply()
 
     # -- building -----------------------------------------------------
@@ -99,17 +108,35 @@ class AnnotationOverlay:
         self._canvas.update()
 
     def set_group_color(self, uid: int, rgba) -> None:
+        self._colors[uid] = rgba
         for v in self._visuals.get(uid, []):
             if isinstance(v, scene.visuals.Line):
                 v.set_data(color=rgba)
             else:
                 g = self._overlay.by_uid()[uid]
                 v.set_data(np.ascontiguousarray(g.points, np.float32), face_color=rgba,
-                           edge_color=(0, 0, 0, 1), edge_width=1.0)
+                           edge_color=(0, 0, 0, 1), edge_width=1.0,
+                           size=self._marker_ratio * self._width)
+        self._canvas.update()
+
+    def _on_width(self, *_) -> None:
+        """Global outline width changed: lines and (proportionally) markers."""
+        self._width = float(self._state.annot_width)
+        size = self._marker_ratio * self._width
+        by_uid = self._overlay.by_uid()
+        for uid, vis in self._visuals.items():
+            for v in vis:
+                if isinstance(v, scene.visuals.Line):
+                    v.set_data(width=self._width)
+                else:
+                    v.set_data(np.ascontiguousarray(by_uid[uid].points, np.float32),
+                               face_color=self._colors[uid], edge_color=(0, 0, 0, 1),
+                               edge_width=1.0, size=size)
         self._canvas.update()
 
     def close(self) -> None:
         self._state.events.visible_groups.disconnect(self._apply)
+        self._state.events.annot_width.disconnect(self._on_width)
         for vis in self._visuals.values():
             for v in vis:
                 v.parent = None

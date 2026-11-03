@@ -21,14 +21,23 @@ place.
 """
 
 from psygnal import EventedModel
+from pydantic import ConfigDict, Field
+
+#: annotation line width limits (screen pixels) and the step of the keys
+ANNOT_WIDTH_MIN, ANNOT_WIDTH_MAX, ANNOT_WIDTH_STEP = 0.5, 12.0, 0.5
+#: image opacity step of the keys (range is 0..1)
+IMAGE_OPACITY_STEP = 0.1
 
 
 class ViewerState(EventedModel):
     """Cross-widget viewer state.
 
     Coordinates are (x, y) in level-0 pixel units, matching the annotation
-    store and the raster protocol.
+    store and the raster protocol. Assignments are validated (the display
+    settings have ranges); an out-of-range value raises ``ValueError``.
     """
+
+    model_config = ConfigDict(validate_assignment=True)
 
     #: current viewport as (x0, y0, width, height), level-0 pixels
     viewport: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0)
@@ -49,6 +58,12 @@ class ViewerState(EventedModel):
     cursor_value_level: int | None = None
     #: annotation object under the cursor, if any
     hovered_id: int | None = None
+    #: annotation outline width, screen pixels (point markers scale with it)
+    annot_width: float = Field(2.0, ge=ANNOT_WIDTH_MIN, le=ANNOT_WIDTH_MAX)
+    #: image opacity, 1 = opaque, 0 = fully faded into the background
+    image_opacity: float = Field(1.0, ge=0.0, le=1.0)
+    #: light (white) instead of dark background; the faded image blends to it
+    light_background: bool = False
 
     @property
     def scale(self) -> float:

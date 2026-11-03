@@ -49,7 +49,8 @@ uv run python -m compass.viewer slide.zarr
 | `--workers N` | 2 | Background tile-reader threads |
 | `--annot FILE` | none | Annotation store (`.ann.sqlite`) drawn over the slide; repeat for several. See [Annotations](#annotations) |
 | `--colors TOML` | palette | Group colours for the overlay |
-| `--annot-width PX` | 2 | Outline width in screen pixels |
+| `--annot-width PX` | saved, else 2 | Outline width in screen pixels (0.5–12); overrides the saved setting |
+| `--no-settings` | off | Ignore and do not save the display settings |
 | `-v` | off | Debug logging to stderr |
 
 The slide must be a Zarr pyramid written by
@@ -121,6 +122,10 @@ the application.
 | `F11` | Toggle fullscreen |
 | `i` | Show/hide the info bar and the overview thumbnail |
 | `a` | Show/hide the annotations and their panel (only with `--annot`) |
+| `[` / `]` | Thinner / wider annotation outlines (0.5 px steps; point markers scale with the width) |
+| `,` / `.` | Fade / restore the image (opacity in 10 % steps) |
+| `b` | Switch between dark and light background |
+| `v` | Show/hide the View panel |
 | `?` or `F1` | Show the list of keys and mouse actions |
 | `Esc` | Nothing (reserved: will clear the selection once annotations exist) |
 
@@ -187,6 +192,27 @@ landmark annotations (hundreds to thousands of objects). A group with more
 than 200 000 objects is skipped with a warning on stderr; cell-level layers
 need the level-of-detail overlay described in
 [Limitations](#limitations-and-next-steps).
+
+# Display settings
+
+The **View** panel (right dock, toggled with `v`) holds three controls that
+help to read annotations against the tissue:
+
+- *Annotation width*: one global outline width for every annotation group.
+  Point markers keep their size relative to it.
+- *Image opacity*: fades the slide into the background so that the
+  annotations stand out; 0 % leaves only the annotations. The overview
+  thumbnail is not faded.
+- *Light background*: white instead of dark grey. The faded image blends into
+  whichever background is active.
+
+*Reset* restores 2 px, 100 % and the dark background. The three values are
+saved when the viewer exits (Qt `QSettings`, application `COMPASS/viewer`)
+and restored at the next start, for any slide; `--annot-width` wins over the
+saved width, and `--no-settings` neither reads nor writes them. Internally
+they are the `annot_width`, `image_opacity` and `light_background` fields of
+`ViewerState`; the fade is a translucent rectangle in the background colour
+drawn above the tiles and below the annotations.
 
 # Zoom limits and history
 
